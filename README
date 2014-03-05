@@ -1,0 +1,56 @@
+The maximum influnce problem using diffusion models on directed graphs, subset solution by ant optimization.
+-------------------------------------------------------------------------------------------------------------
+Author: David L Gibbs
+-------------------------------------------------------------------------------------------------------------
+
+To compile, use The Glasgow Haskell Compiler (www.haskell.org/ghc).
+
+At the command line:
+ghc --make -O2 Main
+
+
+To run the program 
+./Main config.txt graph.txt
+
+
+The config file must look like:
+--------------------------------
+# configuration for test graph 2
+number of restarts : 1
+number of ants     : 10
+converge threshold : 0.001
+local optimization : 0
+evaporation rate   : 0.3
+dampening          : 0.7
+alpha              : 1.0
+beta               : 1.0
+transmit threshold : 0.2
+receive threshold  : 0.2
+random seed        : Random
+k                  : 1
+
+
+The graph file must look like:
+(from) [tab] (to) [tab] (weight)
+------------------------------
+a	i	0.5
+b	i	0.5
+c	i	0.5
+d	i	0.5
+i	j	0.99
+j	e	0.5
+j	f	0.5
+j	g	0.5
+j	h	0.5
+h	r	0.5
+k	r	0.5
+l	r	0.5
+m	r	0.5
+r	s	0.99
+s	n	0.5
+s	o	0.5
+s	p	0.5
+s	q	0.5
+
+
+
