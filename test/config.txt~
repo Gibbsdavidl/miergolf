@@ -1,0 +1,12 @@
+# configuration for test graph 1
+number of restarts: 3
+number of ants    : 100
+converge threshold: 0.001
+deposition rate   : 0.1
+evaporation rate  : 0.1
+alpha             : 1.0 
+beta              : 1.0
+transmit threshold: 0.02
+receive threshold : 0.02
+random seed       : Random
+k                 : 2
