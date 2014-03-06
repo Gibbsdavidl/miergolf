@@ -1,0 +1,322 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Journal Article
+% LaTeX Template
+% Version 1.3 (9/9/13)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% Frits Wenneker (http://www.howtotex.com)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[twoside]{article}
+
+\usepackage{natbib}
+\usepackage{lipsum} % Package to generate dummy text throughout this template
+
+\usepackage[sc]{mathpazo} % Use the Palatino font
+\usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
+\linespread{1.05} % Line spacing - Palatino needs more space between lines
+\usepackage{microtype} % Slightly tweak font spacing for aesthetics
+
+\usepackage[hmarginratio=1:1,top=32mm,columnsep=20pt]{geometry} % Document margins
+\usepackage{multicol} % Used for the two-column layout of the document
+\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
+\usepackage{booktabs} % Horizontal rules in tables
+\usepackage{float} % Required for tables and figures in the multi-column environment - they need to be placed in specific locations with the [H] (e.g. \begin{table}[H])
+\usepackage{hyperref} % For hyperlinks in the PDF
+
+\usepackage{lettrine} % The lettrine is the first enlarged letter at the beginning of the text
+\usepackage{paralist} % Used for the compactitem environment which makes bullet points with less space between them
+
+\usepackage{abstract} % Allows abstract customization
+\renewcommand{\abstractnamefont}{\normalfont\bfseries} % Set the "Abstract" text to bold
+\renewcommand{\abstracttextfont}{\normalfont\small\itshape} % Set the abstract itself to small italic text
+
+\usepackage{titlesec} % Allows customization of titles
+\renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
+\renewcommand\thesubsection{\Roman{subsection}} % Roman numerals for subsections
+\titleformat{\section}[block]{\large\scshape\centering}{\thesection.}{1em}{} % Change the look of the section titles
+\titleformat{\subsection}[block]{\large}{\thesubsection.}{1em}{} % Change the look of the section titles
+
+\usepackage{fancyhdr} % Headers and footers
+\pagestyle{fancy} % All pages have headers and footers
+\fancyhead{} % Blank out the default header
+\fancyfoot{} % Blank out the default footer
+\fancyhead[C]{Running title $\bullet$ November 2012 $\bullet$ Vol. XXI, No. 1} % Custom header text
+\fancyfoot[RO,LE]{\thepage} % Custom footer text
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\title{\vspace{-15mm}\fontsize{24pt}{10pt}\selectfont\textbf{Pathway
+    analysis using the maximal influence problem solved by ant optimization}} % Article title
+
+\author{
+\large
+\textsc{David L Gibbs}\thanks{Correspondence can be addressed to gibbsd@ohsu.edu}\\[2mm] % Your name
+\normalsize OHSU \\ % Your institution
+\normalsize \href{mailto:gibbsd@ohsu.edu}{gibbsd@ohsu.edu} % Your email address
+\vspace{-5mm}
+}
+\date{}
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+\maketitle 
+\thispagestyle{fancy} % All pages have headers and footers
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT
+%----------------------------------------------------------------------------------------
+
+\begin{abstract}
+
+\noindent Here is my abstract. It's about a method for analyzing the
+relationships of reactions in a pathway. In particular the influence
+one reaction has over connected reactions in a pathway and how this
+might relate to disease.
+
+\end{abstract}
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE CONTENTS
+%----------------------------------------------------------------------------------------
+
+\begin{multicols}{2} % Two-column layout throughout the main article text
+
+\section{Introduction}
+
+\lettrine[nindent=0em,lines=2]{C}ells recieve cues from the external environment, transmit the
+information to the cell interior, and process the information, and
+respond to it. The information is carried molecularly along paths.
+
+PATHWAYS. Biological pathways are directed graphs describing branching sequences of molecular
+interactions. Pathways can describe different types of biological
+processes as well including signalling (phosphorylation) pathways,
+gene regulation pathways, metabolic and chemical synthesis pathways,
+and mixtures. Within pathways, there are a number of different types
+of interactions possible including activations, repressions, carried out by means of
+phosphorilations, sumoylations. But, essentially, in a large number of
+cases, it is actually informaiton that is being transmitted.
+
+FLOW NETWORKS. Flow methodologies in networks have found good sucess with methods
+such as Hotnet, responsenet, resistor networks, and others. 
+In the previous work on information flow in interaction networks, two
+different models were considered, one of absorbtion, and one of
+emitting. However, to get a full picture of how a network component
+operates in information flow, it seems necessary to take both
+views. The component both absorbs incoming infomration from the
+upstream components, and in turn transmits this infomration to the
+ddown stream components. 
+
+LINE GRAPHS. However, if we think about what pathway component to focus on, clearly
+in past work, the focus has been on vertices. Largely, PPI networks
+have been considered (which are non-directional) and genes/proteins
+are the focus. With the exception of hotnet that attempts to discover
+connected subgraphs. But in the pathway, It is not a single entitiy
+that might be considered functionally important -- but rather an
+iteraction between a pair of entities. The interaction is an event
+that needs to happen before downstream events take place, and is
+caused by upstream events. In this work then I invert the normal
+focus, and intead look at the reletive importance of events in the
+pathway that have influence over other events.
+
+DYNAMICS and CONTEXT. As the topology of biological networks is not regular, and much of
+dynamic biology is largely contextual, the components of the pathway have
+different levels of importance given any particular time and
+state. For example, a given gene may be active (dynamic) in some
+contexts, such as environmental change, but not others.
+So, depending on the context, injury to some pathway components would
+be relatively harmless, other pathways could make up for the difference. But in some circumstances,
+injury to the component would possible have larger effects in the
+network, possibly leading to disease.
+Injury to a component might happen in a number of different ways
+including mutations to the DNA, miRNA interference, infection
+interference, a protein misfolding.
+
+CONTEXT from DATA. To make the analysis contexutally sensitive, we turn to the use of
+data. By applying data taken representing biological contrasts, such
+as case and control studies, we can make the analysis reflective of
+the active biological processes at work. Certainly, in reponse to
+different biological states, certain pathways will be activated, or
+disregulated. To do this we map the data to nodes on the pathway, and
+apply a defined ``integration function''. The integration function
+tells us how to approach using multiple data types, and puts a weight
+on the edge connecting entities in the pathway. This might represent
+how likely it is that the event was in fact activated.
+
+INFLUENCE. Another way to explore the idea of importance in pathway components is by
+considering influence in a directed graph. Given a particular context,
+and supported by data, a component
+might be considered important if it exercises influence over a large neighborhood
+on the graph. 
+
+QUANTIFY INFLUENCE. To measure influence is by using information diffusion
+models. Information diffusion on graphs can be modeled as a random
+walks on directed graphs. Certain, defined nodes in the graph are
+considered sources of information. Information diffuses (walks) from
+node to node probabilistically. Levels of dampening on information transmitting between nodes
+can be tuned to reveal a localized view of influence. The dampening
+can represent a model of unknown interferences. 
+
+SUPERPATHS. This method should be applicable to very large super-pathways which
+are constructed by joining smaller described pathways. This actually
+brings a very new way to determine the influence of one pathway on
+neighboring pathways, and how injury to influential pathway events
+transmit to adjacent pathways, affecting the network at large.
+
+MAXIMUM INFLUENCE PROBLEM. In such large pathways, it's expected that there would be many or
+multple influential edges. Even with a metric for measuring the
+influcene of a particular event in the graph, using data, it's a hard
+combinatorial problem to choose the best set of pathway events that
+have the greatest cumulative influence in the graph. This problem is
+congruent with choosing K number of nodes to maximize influence. This
+problem has been discussed in other domains such as social
+networking. 
+
+ANT OPTIMIZATION. A way to develop good solutions is by using the meta-heuristic of ant
+colony optimization which has been shown to be very strong at solving
+combinatorial problems such as the travelling salesmen problem and
+subset selection problems like the knapsack problem. In this work, we
+are solving a knapsack type problem, where K number of pathway edges
+are selected to maximize the area of influence.
+
+
+%------------------------------------------------
+
+\section{Methods}
+
+The mathematical description of the anlaysis framework follows.
+
+\subsection{Data Input and Edge weight computation}
+
+Pathway are encoded as a source, a destination an edge type. Using
+this format, constructing larger pathways is trivial.
+
+Data is mapped on to nodes, and given a integration function, weights
+are computed for each edge. The edge weight is added to the pathway
+file. 
+
+
+Integration functions represent the probability that given the
+biological context the event in question is active. If we define 
+the data mapped to a node $X$ as $X_{ij}$ where node X
+has data types $i \in T$ where $T$ is the set of data types and
+measurements $j \in S$ where $S$ is the set fo samples for which
+measurements have been taken.  The integration function is defined as
+
+\begin{equation}
+\label{integration-function}
+F(X_{ij} , Y_{ij}) \in 0 \le R \le 1 .
+\end{equation}
+
+
+\subsection{Line graph transformation}
+
+Line graphs, also known as edge graphs, show the adjacency of edges to
+one another.
+
+\subsection{The Radio Model for information broadcast}
+
+The radio model is built from prior work from Yu and S.  on the
+information flow model \cite{Stojmirovic:2007eg}.
+ 
+The markov transition matrix $P_{ij}$ defines the probability of
+moving from one node to another. In this case, it represents f
+
+The absorbtion model $G = (I - P_{tt})^{-1} P_{ts}$
+
+The emitting model $H = P_{st} (I - P_{tt})^{-1}$
+
+\subsection{Maximum Influence Problem}
+
+The maximum influence problem seeks to find K nodes which maximize
+some score using diffusion models.
+
+\subsection{Hypercube Min-Max Ant Optimization for subset problems}
+
+For ant colony optimization, transform the line graph to an 
+all-to-all graph with tuple
+weights (x,y) where x is the edge weight from the integration
+function, and y is the ant pheromone.
+
+Hypercube Min-max ant colony optimization is used to solve the
+Maximal Influence Problem on $k$ vertices (reactions in the pathway).
+
+The set of influential edges in the pathway are ranked by the
+diffusion model. Edges with greater diffusion are ranked first.
+The information diffusion model is based upon a random walk on the
+graph, giving long term estimates of information absorbtion on a node,
+and the amounts of infomration emitted.
+
+The result of the method is a ranked list of pathway edges,
+representing the most important and influential reactions in the system.
+
+
+%------------------------------------------------
+
+\section{Results}
+
+Some results here.
+
+
+%------------------------------------------------
+
+\section{Discussion}
+
+\subsection{Influential edges}
+
+In this portion we discuss the most influential reactions, and why
+they're so influential.
+
+\begin{table}[H]
+\caption{Diffusion Models}
+\centering
+\begin{tabular}{llr}
+\toprule
+\multicolumn{2}{c}{Name} \\
+\cmidrule(r){1-2}
+Model & Score & Top Hit \\
+\midrule
+Linear & 1 & etcm \\
+Probabilistic & 3 & ggtt \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Cutting edges to produce sub-graphs}
+
+It may be possible to take the ranked edges, and cut them, producing a
+set of sub-graphs containing nodes that are functionally related and
+show the redundancy in the system.
+
+\subsection{Relationships to information flow}
+
+I am very curious as to whether information flow relates to the
+influence score in graphs.  This might change with different models of 
+
+%----------------------------------------------------------------------------------------
+%	REFERENCE LIST
+%----------------------------------------------------------------------------------------
+
+\bibliographystyle{unsrt}
+\bibliography{mipdao}
+
+%----------------------------------------------------------------------------------------
+
+\end{multicols}
+
+\end{document}
