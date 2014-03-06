@@ -125,10 +125,24 @@ scoreGraph s ant (uedges, mat) = x+y
         ptt = makePTT uedges (second ant) mat 
         i   = ident (cols ptt)
         z   = (inv (i - ptt))
-        g   =  z<> pts
+        g   = z <> pts
         h   = pst <> z
         x   = fromIntegral $ length $ filter (\x -> x > (tx s)) $ toList $ flatten h :: Double
         y   = fromIntegral $ length $ filter (\x -> x > (rx s)) $ toList $ flatten g :: Double        
+
+-- The absorbing model
+-- G represents the probability of information arriving from an emitter.
+scoreGraph2 :: State -> Ant -> ScoreData -> Double
+scoreGraph2 s ant (uedges, mat) = x+y
+  where (pts,pst) = makePTSandPST uedges (second ant) mat
+        ptt = makePTT uedges (second ant) mat 
+        i   = ident (cols ptt)
+        lap = (i - ptt)
+        f   = linearSolve lap pts
+        h'  = linearSolve (trans lap) (trans pst)
+        h   = trans h'
+        x   = fromIntegral $ length $ filter (\x -> x > (tx s)) $ toList $ flatten h :: Double
+        y   = fromIntegral $ length $ filter (\x -> x > (rx s)) $ toList $ flatten f :: Double        
 
 -- The absorbing model
 -- G represents the probability of information arriving from an emitter.
@@ -137,15 +151,16 @@ getScoreGraphMatrix ant (uedges, mat) = h
   where (pts,pst) = makePTSandPST uedges (second ant) mat
         ptt = makePTT uedges (second ant) mat 
         i   = ident (cols ptt)
-        z   = (inv (i - ptt))
-        g   =  z<> pts
-        h   = pst <> z
+        lap = (i - ptt)
+        f   = linearSolve lap pts
+        h'  = linearSolve (trans lap) (trans pst)
+        h   = trans h'
         
 
 score :: State -> Ant -> ScoreData -> Ant
 score s ant scoredata
       | (hasDeadEdge ant) = ((node ant), (solution ant), 0.0)  -- trace ("dead edge")
-      | otherwise = ((node ant), (solution ant), (scoreGraph s ant scoredata))
+      | otherwise = ((node ant), (solution ant), (scoreGraph2 s ant scoredata))
 
 hasDeadEdge :: Ant -> Bool
 hasDeadEdge (n1, es, sc) 
