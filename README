@@ -3,18 +3,26 @@ The maximum influnce problem using diffusion models on directed graphs, subset s
 Author: David L Gibbs
 -------------------------------------------------------------------------------------------------------------
 
-To compile, use The Glasgow Haskell Compiler (www.haskell.org/ghc).
+If you would like to run this software,
+first, go to www.haskell.org/platform and install Haskell.
 
-At the command line:
-ghc --make -O2 Main
+Then use cabal to intall the necessary libraries.
+And make sure you have an optimized LAPACK library like libatlas-base.
+
+    cabal install hmatrix
+
+Then, to compile, use The Glasgow Haskell Compiler (www.haskell.org/ghc).
+
+    ghc --make -O2 Main
+
+Lastly, to run the program:
+
+    ./Main config.txt graph.txt
 
 
-To run the program 
-./Main config.txt graph.txt
-
-
+See the test dir for example files, but...
 The config file must look like:
---------------------------------
+
 # configuration for test graph 2
 number of restarts : 1
 number of ants     : 10
@@ -32,7 +40,7 @@ k                  : 1
 
 The graph file must look like:
 (from) [tab] (to) [tab] (weight)
-------------------------------
+
 a	i	0.5
 b	i	0.5
 c	i	0.5
