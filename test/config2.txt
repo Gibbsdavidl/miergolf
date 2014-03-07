@@ -1,13 +1,13 @@
 # configuration for test graph 2
-number of restarts : 1
-number of ants     : 10
+number of restarts : 5
+number of ants     : 15
 converge threshold : 0.001
-local optimization : 0
-evaporation rate   : 0.3
+local optimization : 1
+evaporation rate   : 0.2
 dampening          : 0.7
 alpha              : 1.0
 beta               : 1.0
 transmit threshold : 0.2
 receive threshold  : 0.2
 random seed        : Random
-k                  : 1
+k                  : 4

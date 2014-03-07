@@ -160,7 +160,7 @@ getScoreGraphMatrix ant (uedges, mat) = h
 score :: State -> Ant -> ScoreData -> Ant
 score s ant scoredata
       | (hasDeadEdge ant) = ((node ant), (solution ant), 0.0)  -- trace ("dead edge")
-      | otherwise = ((node ant), (solution ant), (scoreGraph2 s ant scoredata))
+      | otherwise = ((node ant), (solution ant), (scoreGraph s ant scoredata))
 
 hasDeadEdge :: Ant -> Bool
 hasDeadEdge (n1, es, sc) 

@@ -202,39 +202,72 @@ The mathematical description of the anlaysis framework follows.
 
 \subsection{Data Input and Edge weight computation}
 
-Pathway are encoded as a source, a destination an edge type. Using
-this format, constructing larger pathways is trivial.
+Pathways are encoded as a graph, $G = \langle V, E \rangle$, a set of vertices $V$,
+connected by edges, $E$. Each edge can be described as $E_{ij} = (V_i ,
+V_j, w_{ij}, t_{ij})$ where the directed edge connects from $V_i$ to $V_j$,
+and carries weight $w_{ij} \in \mathbb{R}$ with type $t_{ij} \in \mathbb{N}$ that describes the
+type of pathway edge.
 
-Data is mapped on to nodes, and given a integration function, weights
-are computed for each edge. The edge weight is added to the pathway
-file. 
-
-
-Integration functions represent the probability that given the
-biological context the event in question is active. If we define 
-the data mapped to a node $X$ as $X_{ij}$ where node X
-has data types $i \in T$ where $T$ is the set of data types and
-measurements $j \in S$ where $S$ is the set fo samples for which
-measurements have been taken.  The integration function is defined as
+Vertices represent biological entities such as genes, proteins,
+functional miRNAs, and so on. Edge weights are computed using an
+predefined integration function, $\mathcal{F}$, and data
+mapped to vertices, notated as $D(V_i)$ for data mapped to vertice
+$V_i$. The integration function will largely depend on the type of
+data at hand, and the type of pathway edges considered,
+but one example (that disregards the edge type) 
+would be the mutual information function.
 
 \begin{equation}
 \label{integration-function}
-F(X_{ij} , Y_{ij}) \in 0 \le R \le 1 .
+w_{ij} = F(D(V_{i}) , D(V_{j})) = \mathcal{I} (D(V_{i}) ; D(V_{j}))
+\end{equation}
+
+Integration functions give confidence to the notion that
+under the biological context, the pathway edge, or event, in question is active. 
+
+\subsection{Directed line graph transformation}
+
+Line graphs, also known as edge graphs, show the adjacency of edges to 
+one another. The line graph, $G'$ is derived using $G$, as described
+above. The new, directed, graph is notated as $G' = \langle V', E' \rangle$ where
+the vertices now represent edges in $G$, $V' \in E$ and the edges of the line
+graph, $E' \in E \times E$ are written as 
+
+\begin{equation}
+\label{line-graph-edges}
+E'_{ij} = (E_i, E_j, \mathit{f} (W(E_i), W(E_j)))
+\end{equation}
+
+Where edge, $E_i \in G$ leads into $E_j \in G$, $W(E_i)$ is the edge
+on the edge in $G$, and $\mathit{f}$ is some function on the weights,
+a product is used in this work.
+
+For two verices in the line graph to be connected, the edge indices
+in $G$ must be a sequence. For example, from $E(V_1, V_2)$ to $E(V_2,
+V_3)$ forms a sequence and would be represented in the line graph as
+being connected. But, two edges (vertices in the line graph) from $E(V_1, V_2)$ to $E(V_3,
+V_2)$ would not be connected.
+ 
+\subsection{The Radio Model for information broadcast}
+
+The radio model describes a broadcast area, or area of influence,
+given a vertice on the directed graph. The vertice both recieves
+infomration and transmits information. Information can only flow
+in the direction of the given directed edges.
+
+The radio model is built from two parts, the absorbing and emitting
+models first described in work from Yu and Stojmirovi\'{c} \citep{Stojmirovic:2007eg}.
+ 
+The markov transition matrix $P_{ij}$ defines the probability of
+moving from one node, $V' \in G'$, to another. $P$ is computed by
+
+\begin{equation}
+\label{transition-matrix}
+P_{ij} = \frac{W(E'_i)} {\sum W(E')}
 \end{equation}
 
 
-\subsection{Line graph transformation}
-
-Line graphs, also known as edge graphs, show the adjacency of edges to
-one another.
-
-\subsection{The Radio Model for information broadcast}
-
-The radio model is built from prior work from Yu and S.  on the
-information flow model \cite{Stojmirovic:2007eg}.
- 
-The markov transition matrix $P_{ij}$ defines the probability of
-moving from one node to another. In this case, it represents f
+We choose a set $S$
 
 The absorbtion model $G = (I - P_{tt})^{-1} P_{ts}$
 
