@@ -49,7 +49,7 @@ module Sparse (
           -- * Conjugate-Gradient solver
           , solveCG
           -- * Displaying solutions
-          , showSolution
+          -- , showSolution
         ) where
 
 import Data.List                          (intercalate)
@@ -161,6 +161,7 @@ solveCG g a@(SM (n, _)) b = cg a b x0
 -- | The Conjugate-gradient algorithm. Our implementation closely follows the
 -- one given here: <http://en.wikipedia.org/wiki/Conjugate_gradient_method#Example_code_in_Matlab>
 cg :: RealFloat a => SM a -> SV a -> SV a -> SV a
+--                                i      eps  p  r  x
 cg a b x0 = cgIter (1000000 :: Int) (norm r0) r0 r0 x0
  where r0 = b `subSV` (a `mulSMV` x0)
        cgIter 0 _   _ _ _ = error "Conjugate Gradient: No convergence after 10^6 iterations. Make sure the input matrix is symmetric positive-definite!"
@@ -169,16 +170,17 @@ cg a b x0 = cgIter (1000000 :: Int) (norm r0) r0 r0 x0
         -- if the error itself is less than 1e-10.
         | eps' < 1e-20 = x'
         | True         = cgIter (i-1) eps' p' r' x'
-        where ap    = a `mulSMV` p
-              alpha = eps / (ap `dotSV` p)
-              x'    = x `addSV` (alpha `sMulSV` p)
-              r'    = r `subSV` (alpha `sMulSV` ap)
+        where ap    = a `mulSMV` p                  -- SV
+              alpha = eps / (fst (ap `dotSV` p))    -- Double
+              x'    = x `addSV` (alpha `sMulSV` p)  -- SV
+              r'    = r `subSV` (alpha `sMulSV` ap) -- SV
               eps'  = norm r'
               p'    = r' `addSV` ((eps' / eps) `sMulSV` p)
-       norm (SV v) = IM.foldl' (\(s,t) (e,f) -> (s+e*e,f)) (0,0) v -- square of normSV, but no need for expensive square-root
+       norm (SV v) = fst $ IM.foldl' (\(s,t) (e,f) -> (s+e*e,f)) (0.0,0.0) v
 
 -- | Display a solution in a human-readable form. Needless to say, only use this
 -- method when the system is small enough to fit nicely on the screen.
+{-
 showSolution :: RealFloat a
              => Int   -- ^ Precision: Use this many digits after the decimal point.
              -> SM a  -- ^ The @A@ matrix, @nxn@
@@ -205,13 +207,14 @@ showSolution prec ma@(SM (n, _)) vb vx = intercalate "\n" $ header ++ res
                                   ++ center cellWidth "x" ++ " = " ++ center cellWidth "b"
                                 s = replicate l '-' ++ "+" ++ replicate (length r - l - 1) '-'
                             in [h, s]
+-}
 
 ---------------------------------------------------------------------------------------------
 -- Specialize for Float and Double instances
-{-# SPECIALISE INLINE lookupSV :: Int        -> SV Float  -> Float                        #-}
-{-# SPECIALISE INLINE lookupSV :: Int        -> SV Double -> Double                       #-}
-{-# SPECIALISE INLINE lookupSM :: (Int, Int) -> SM Float  -> Float                        #-}
-{-# SPECIALISE INLINE lookupSM :: (Int, Int) -> SM Double -> Double                       #-}
+{-# SPECIALISE INLINE lookupSV :: Int        -> SV Float  -> (Float, Float )                        #-}
+{-# SPECIALISE INLINE lookupSV :: Int        -> SV Double -> (Double,Double)                       #-}
+{-# SPECIALISE INLINE lookupSM :: (Int, Int) -> SM Float  -> (Float, Float )                        #-}
+{-# SPECIALISE INLINE lookupSM :: (Int, Int) -> SM Double -> (Double,Double)                       #-}
 {-# SPECIALISE INLINE sMulSV   :: Float     -> SV Float  -> SV Float                      #-}
 {-# SPECIALISE INLINE sMulSV   :: Double    -> SV Double -> SV Double                     #-}
 {-# SPECIALISE INLINE sMulSM   :: Float     -> SM Float  -> SM Float                      #-}
@@ -220,12 +223,12 @@ showSolution prec ma@(SM (n, _)) vb vx = intercalate "\n" $ header ++ res
 {-# SPECIALISE INLINE addSV    :: SV Double -> SV Double -> SV Double                     #-}
 {-# SPECIALISE INLINE subSV    :: SV Float  -> SV Float  -> SV Float                      #-}
 {-# SPECIALISE INLINE subSV    :: SV Double -> SV Double -> SV Double                     #-}
-{-# SPECIALISE INLINE dotSV    :: SV Float  -> SV Float  -> Float                         #-}
-{-# SPECIALISE INLINE dotSV    :: SV Double -> SV Double -> Double                        #-}
+{-# SPECIALISE INLINE dotSV    :: SV Float  -> SV Float  -> (Float,Float)                         #-}
+{-# SPECIALISE INLINE dotSV    :: SV Double -> SV Double -> (Double,Double)                        #-}
 {-# SPECIALISE INLINE mulSMV   :: SM Float  -> SV Float  -> SV Float                      #-}
 {-# SPECIALISE INLINE mulSMV   :: SM Double -> SV Double -> SV Double                     #-}
-{-# SPECIALISE INLINE normSV   :: SV Float  -> Float                                      #-}
-{-# SPECIALISE INLINE normSV   :: SV Double -> Double                                     #-}
+{-# SPECIALISE INLINE normSV   :: SV Float  -> (Float,Float)                                      #-}
+{-# SPECIALISE INLINE normSV   :: SV Double -> (Double,Double)                                     #-}
 {-# SPECIALISE        solveCG  :: RandomGen g => g -> SM Float  -> SV Float  -> SV Float  #-}
 {-# SPECIALISE        solveCG  :: RandomGen g => g -> SM Double -> SV Double -> SV Double #-}
 {-# SPECIALISE INLINE cg       :: SM Float  -> SV Float  -> SV Float  -> SV Float         #-}

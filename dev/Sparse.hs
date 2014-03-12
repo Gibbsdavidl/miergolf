@@ -45,7 +45,7 @@ module Sparse (
           -- * Types
             SV(..), SM(..)
           -- * Sparse operations
-          , lookupSV, lookupSM, addSV, subSV, dotSV, normSV, sMulSV, sMulSM, mulSMV
+          , lookupSV, lookupSM, addSV, subSV, dotSV, normSV, sMulSV, sMulSM, mulSMV, emptySV
           -- * Conjugate-Gradient solver
           , solveCG
           -- * Displaying solutions
@@ -53,14 +53,19 @@ module Sparse (
         ) where
 
 import Data.List                          (intercalate)
-import qualified Data.IntMap.Strict as IM (IntMap, lookup, map, unionWith, intersectionWith, fromList, findWithDefault, foldl')
+import qualified Data.IntMap.Strict as IM (IntMap, lookup, map, unionWith, intersectionWith, showTree,
+                                           size, fromList, findWithDefault, foldl')
 import System.Random                      (Random, RandomGen, randomRs)
 import Numeric                            (showFFloat)
 
 -- | A sparse vector containing elements of type 'a'. Only the indices that contain non-@0@ elements should be given
 -- for efficiency purposes. (Nothing will break if you put in elements that are @0@'s, it's just not as efficient.)
-newtype SV a = SV (IM.IntMap (a,a))
+newtype SV a = SV (IM.IntMap (a,a)) deriving (Show)
 
+--instance Show (SV a) where 
+--  show :: (SV a) -> String
+--  show (SV m) = IM.showTree m
+                           
 -- | A sparse matrix is essentially an int-map containing sparse row-vectors:
 --
 --     * The first element, @n@, is the number of rows in the matrix, including those with all @0@ elements.
@@ -90,6 +95,9 @@ tppl (x,y) (w,z) = (x+w, y) -- pheromones don't matter here --
 -- tuple mult -- multiple only the first members
 tpmu :: Num a => (a,a) -> (a,a) -> (a,a)
 tpmu (x,y) (w,z) = (x*w,y)
+
+emptySV :: SV a -> Bool
+emptySV (SV v) = IM.size v /= 0
 
 -- | Look-up a value in a sparse-vector.
 lookupSV :: Num a => Int -> SV a -> (a,a)
@@ -180,6 +188,9 @@ cg a b x0 = cgIter (1000000 :: Int) (norm r0) r0 r0 x0
 
 -- | Display a solution in a human-readable form. Needless to say, only use this
 -- method when the system is small enough to fit nicely on the screen.
+
+
+
 {-
 showSolution :: RealFloat a
              => Int   -- ^ Precision: Use this many digits after the decimal point.

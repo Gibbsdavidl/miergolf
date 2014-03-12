@@ -46,7 +46,7 @@ import qualified Data.Map.Strict as Map
 initGraphDataT :: Maybe State -> String -- (State, Digraph)
 initGraphDataT s 
   | isNothing s = "nothing"
-  | isJust s    = something 
+  | isJust s    = something ++ "\n" ++ (prettyDigraphPrint digraph)
                   where digraph  = constructDigraph (fromJust s)
                         something = digraphSize digraph
                   
@@ -76,7 +76,8 @@ buildDigraph net = zymorph
         smlist  = initSMList n     -- our empty sparse matrix
         epairs  = allEdgePairs net -- for each potential entry in the matrix
         smlist' = addEntry epairs net smlist  -- if infoPasses, then it's added to the matrix
-        zymorph = (net, SM (n, IM.fromList smlist')) 
+        smlist''= filter (\(a, m) -> emptySV m) smlist'
+        zymorph = (net, SM (n, IM.fromList smlist'')) 
                  
 -- Idx :: intmap of (Ints, Edges)
 
@@ -94,7 +95,7 @@ sideSize ime = length $ listNodes $ (Map.keys ime) -- get the nodes out of the l
 
 initSMList :: Int -> [(Int, SV Double)]
 -- build a list, a SV for each node in the Idx list ... these should be filtered later
-initSMList n = zip [0 .. n] (replicate n emptySV)
+initSMList n = zip [0 .. n] (replicate n anEmptySV)
 
 -- let x = initSMList 10
 -- let y = SM (10, IM.fromList x)

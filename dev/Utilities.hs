@@ -38,10 +38,11 @@ module Utilities (EdgeList,
                   listNodes,
                   canPass,
                   digraphSize,
+                  prettyDigraphPrint,
                   emptySM,
                   emptyDigraph,
                   emptyIdx,
-                  emptySV
+                  anEmptySV
                   ) where
 ----------------------------------------------------------------------------------------------------
 -- The Network data type and functions on the network ----------------------------------------------
@@ -49,7 +50,7 @@ module Utilities (EdgeList,
 
 import System.Random
 import Numeric.LinearAlgebra
-import qualified Data.IntMap.Strict as IM (IntMap, lookup, map, unionWith, empty, size,
+import qualified Data.IntMap.Strict as IM (IntMap, lookup, map, unionWith, empty, size, showTree,
                                            intersectionWith, fromList, findWithDefault, foldl')
 import qualified Data.Map as Map
 import Sparse
@@ -89,7 +90,7 @@ emptyEdge = (-1)
 newAnt = (emptyEdge, [], 0.0) :: Ant
 deadDedge = 0 :: Int
 emptyIdx = Map.fromList [(("xa","xb",0.0,0.0),0)] :: Map.Map Edge Int
-emptySV  = SV (IM.empty)
+anEmptySV  = SV (IM.empty)
 emptySM  = SM (0, IM.fromList [   (0,SV (IM.fromList [(0,(0.0,0.0))])) ])
 emptyDigraph = (emptyIdx, emptySM)
 
@@ -139,7 +140,8 @@ canPass (_,_,a,_)
   | a > 0.0  = True
   | otherwise = False
 
-
+prettyDigraphPrint :: Digraph -> String
+prettyDigraphPrint (x,(SM (_, m))) = IM.showTree m
 -------------------------------------------------------------------------------------------------------------------------
 -- END OF LINE --
 -------------------------------------------------------------------------------------------------------------------------
