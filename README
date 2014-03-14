@@ -3,7 +3,54 @@ The maximum influnce problem using diffusion models on directed graphs, subset s
 Author: David L Gibbs
 -------------------------------------------------------------------------------------------------------------
 
-If you would like to run this software,
+This software has been reimplemented in python, to take advantage of the sparse matrix libraries.
+
+To run this program:  python main.py config1.txt graphfile.txt
+
+See the test dir for example files, but...
+The config file must look like:
+
+---------------------------- (top of the file)
+number of restarts : 1
+number of ants     : 10
+converge threshold : 0.001
+local optimization : 0
+evaporation rate   : 0.3
+dampening          : 0.7
+alpha              : 1.0
+beta               : 1.0
+transmit threshold : 0.2
+receive threshold  : 0.2
+k                  : 1
+
+
+The graph file must look like:
+(from) [tab] (to) [tab] (weight)
+----------------(top of file)
+a	i	0.5
+b	i	0.5
+c	i	0.5
+d	i	0.5
+i	j	0.99
+j	e	0.5
+j	f	0.5
+j	g	0.5
+j	h	0.5
+h	r	0.5
+k	r	0.5
+l	r	0.5
+m	r	0.5
+r	s	0.99
+s	n	0.5
+s	o	0.5
+s	p	0.5
+s	q	0.5
+
+
+
+-------------------------------------------------------------------------------------------------------------
+
+If you would like to run the Haskell version of this software,
 first, go to www.haskell.org/platform and install Haskell.
 
 Then use cabal to intall the necessary libraries.
