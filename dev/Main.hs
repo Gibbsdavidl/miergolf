@@ -21,18 +21,12 @@ import System.Random
 import Utilities
 import ProgramState
 import Graph
---import AntOpt
---import InfoFlow
-import Graph
-
+import AntOpt
 
 printResult :: String -> IO()
 printResult result = putStrLn result
 
 main :: IO ()
 main = newStdGen >>= \g -> getArgs >>= \args -> 
-  (printResult . initGraphDataT . initState) (g,args)
+  (printResult . optimize . initGraphData . initState) (g,args)
 
---main :: IO ()
---main = newStdGen >>= \g -> getArgs >>= \args -> 
--- (printResult . optimize . initGraphData . initState) (g,args)

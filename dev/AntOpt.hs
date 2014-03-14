@@ -15,52 +15,46 @@
 
 module AntOpt (
  optimize
-,possibleEdges
-,possibleLastEdges
 ,edgeProb
 ,cumulate
 ,getIndex
-,maybeSelect
 ,generateSoln
-,localOptimize
-,updateDigraph
+--,localOptimize
 ,convergence
 ,updateSolns
-,edgeupd
 ,proportional
 ,inSolutions
 ,bounded
-,edgeElem
-,notEndingAtStart
-,trimAnt
 ) where
 
+
+import qualified Data.IntMap.Strict as IM
+import Data.Maybe as Maybe (fromJust)
 import ProgramState
 import Utilities
-import InfoFlow
 import Graph
-import LocOpt
+import Sparse
+-- import LocOpt
 import System.Random
 import Debug.Trace
 import Numeric.LinearAlgebra
-import Data.Time.Clock.POSIX
 import System.IO.Unsafe
 import Data.List (nub)
 
-optimize :: (State, Digraph, ScoreData) -> String
-optimize (state,digraph,scoredata) 
+optimize :: (State, Digraph) -> String
+optimize (state,(idx, sparse)) 
   | isEmptyState state = "ERROR"  -- stop now!
-  | otherwise = showState (minmax state digraph scoredata) scoredata   -- OK, let's compute
+  | otherwise = showState (minmax state idx sparse)  -- OK, let's compute
  
 ------------------------------------------------------------------------------------------
 -- The particular optimization routine -- MinMax Ant Optimization
 -----------------------------------------------------------------------------------------
-minmax :: State -> Digraph -> ScoreData -> State
-minmax s digraph scoredata
-                | doneState s = s  -- all done? , return program state
-                | converged s = minmax (newRun s) (resetDigraph digraph) scoredata 
-                | otherwise   = minmax s' digraph' scoredata -- or do another iteration --
-                                where (digraph', s') = runColony s digraph scoredata
+minmax :: State -> Idx -> SM Double -> State
+minmax s idx sparse
+  | doneState s = s  -- all done? , return program state
+  | converged s = minmax (newRun s) (resetIdx idx) sparse 
+  | otherwise   = minmax s' idx' sparse -- or do another iteration --
+    where (s', idx') = runColony s idx sparse
 
 doneState :: State -> Bool
 -- are we done with the optimization yet?
@@ -75,162 +69,89 @@ newRun :: State -> State
 newRun s = s {runsDone = runCount, c = 1, bestRest = (0.0, []), bestIter = (0.0, [])}
            where runCount = ((runsDone s)+1)
       
-runColony :: State -> Digraph -> ScoreData -> (Digraph, State)   -- changed states: StdGen,SolnSet,Runs
+runColony :: State -> Idx -> SM Double -> (State, Idx)   -- changed states: StdGen,SolnSet,Runs
 -- An Ant iteration: run colony needs to return a digraph and a state.
-runColony s digraph scoredata = (digraph', s3)
-  where (ant, s')  = generateSoln s digraph scoredata       -- generate solutions -- keep the best
-        ant2       = localOptimize s' digraph scoredata ant
-        s2         = updateSolns ant2 s'      -- is it better than the previous soln?
-        digraph'   = updateDigraph digraph s2  -- update the pheromone levels
-        s3         = convergence s2 digraph'  -- check for convergence
+runColony s idx sparse = (s3, idx')
+  where (ant, s')  = generateSoln s idx sparse -- generate solutions -- keep the best
+        -- ant2       = localOptimize s' digraph scoredata ant
+        s2         = updateSolns ant s'       -- is it better than the previous soln?
+        idx'       = updateIdx idx s2          -- update the pheromone levels
+        s3         = convergence s2 idx'   -- check for convergence
 
 
 ------------------------------------------------------------------------------------------------
 -- compute solutions -- 
 -------------------------------------------------------------------------------------------------------------------------
 
-generateSoln :: State -> Digraph -> ScoreData -> (Ant, State)
+generateSoln :: State -> Idx -> SM Double -> (Ant, State)
 -- For i = 1 to m ... create an ant ... construct a solution.
 --     if the solution is better then a held solution ... keep it.
-generateSoln s digraph scoredat = (genSoln (ants s) s digraph scoredat newAnt)
+generateSoln s idx sparse = (genSoln (ants s) s idx probs sparse newAnt)
+  where ks = ([0..((IM.size idx) - 1)])
+        probs = edgeProb s ks idx :: [Double]
 
-genSoln :: Int -> State -> Digraph -> ScoreData -> Ant -> (Ant,State)
-genSoln 0 s digraph scoredata bestAnt = (bestAnt, s)
-genSoln currm s digraph scoredata bestAnt = genSoln (currm-1) s' digraph scoredata ant'
-          where starnode = ("Start1","Start2",1.0,1.0)::Edge -- start at the START NODE
-                newant   = makeNewAnt starnode                    -- our new ant, starting at start.
-                (ant,s') = constructSoln ((k s)+1) digraph (newant,s) -- construct a solution, starting at idx, of K nodes.
-                ant'     = checkBest s ant bestAnt scoredata      -- keep it?
+genSoln :: Int -> State -> Idx -> [Double] -> SM Double -> Ant -> (Ant,State)
+-- generate a solution for each ant --
+genSoln 0    s idx ps sparse bestAnt = (bestAnt, s)
+genSoln curr s idx ps sparse bestAnt = genSoln (curr-1) s' idx ps sparse ant'
+          where newant   = makeNewAnt (-1)                       
+                (ant,s') = constructSoln (k s) idx (newant, s, (IM.keys idx), ps)
+                ant'     = checkBest s' ant bestAnt sparse idx      -- keep it?
 
-startNode :: Ant -> Edge -> Ant
+makeNewAnt :: Int -> Ant 
+makeNewAnt e = (startNode newAnt e)
+
+startNode :: Ant -> Int -> Ant
 -- give a new ant -- a place to start
 startNode (a,b,c) e = (e, b, c)
 
-makeNewAnt :: Edge -> Ant 
-makeNewAnt e = (startNode newAnt e)
 
 ------------------------------------------------------------------------------------------------------------------
 
-constructSoln :: Double -> Digraph -> (Ant,State) -> (Ant,State)
--- sample a sequence of nodes in the digraph.
-constructSoln es dcg (ant,s) 
-              | es < 1     = (ant,s) -- complete ant here ... add in the edge to go home.
-              | es == 1    = constructSoln (es-1) dcg (getLastEdge s dcg ant)
-              | otherwise  = constructSoln (es-1) dcg (getNextEdge s dcg ant)
+constructSoln :: Double -> Idx -> (Ant,State,[Int],[Double]) -> (Ant,State)
+-- sample a set of nodes in the digraph.
+constructSoln es idx (ant,s,ks,ps) 
+              | es < 1     = trace (show ant) (ant,s) -- complete ant here ... add in the edge to go home.
+              | otherwise  = constructSoln (es-1) idx (getNext s idx ks ps ant) -- ks, ps will change...
 
 
-getNextEdge :: State -> Digraph -> Ant -> (Ant,State)
-getNextEdge s dcg ant = (ant', s{g=g'})
-            where edgies        = possibleEdges ant dcg     :: Digraph    -- given where we are ... *
-                  probabilities = edgeProb s edgies         :: [Double]   -- get probabilities for each possible edge 
-                  cumulaProbs   = cumulate probabilities [] :: [Double]   -- make it a cumulative distribution
-                  (dice, g')    = doubles 1 ([], (g s))     :: ([Double], StdGen) -- our random num
-                  edgeIndex     = getIndex 0 ((head dice), cumulaProbs) :: Int    -- choose the edge
-                  chosenEdge    = maybeSelect edgies edgeIndex :: Dedge   -- the chosen digraph edge
-                  ant' = ((newNode ant chosenEdge), (chosenEdge : (solution ant)), 0.0)
+getNext :: State -> Idx -> [Int] -> [Double] -> Ant -> (Ant,State, [Int],[Double])
+-- ks are the set of items left to choose from
+getNext s idx ks ps ant = (ant', s{g=g'}, ks', ps')
+        -- Maybe first filter out ks that are not interesting .. --
+  where cumulaProbs   = cumulate ps [] :: [Double]                         -- cumulative distribution
+        (dice, g')    = doubles 1 ([], (g s))     :: ([Double], StdGen)    -- our random num
+        i             = getIndex 0 ((head dice), cumulaProbs) :: Int -- choose the edge
+        k             = ks !! i
+        (ks',ps')     = removeChosenK 0 i ks ps ([], [])
+        ant'          = (k, (k : (solution ant)), 0.0)
 
--- final choice needs to lead the ant back to the starting node. --
-getLastEdge :: State -> Digraph -> Ant -> (Ant,State)
-getLastEdge s dcg ant = (ant', s{g=g'})
-            where edgies        = possibleLastEdges ant dcg    :: Digraph   -- given where we are ... *
-                  probabilities = edgeProb s edgies :: [Double]  -- get probabilities for each possible edge 
-                  cumulaProbs   = cumulate probabilities []    :: [Double]  -- make it a cumulative distribution
-                  (dice, g')    = doubles 1 ([], (g s))        :: ([Double], StdGen)  -- our random num
-                  edgeIndex     = getIndex 0 ((head dice), cumulaProbs) :: Int   -- choose the edge
-                  chosenEdge    = maybeSelect edgies edgeIndex :: Dedge
-                  ant'          = ((newNode ant chosenEdge), (chosenEdge : (solution ant)), 0.0)
-
--- if K == 2, and the ant picks a self loop
--- then when K == 1, the ant can not find a path "back" to where it is .. (it's already traversed)
--- and the ant dies.
+removeChosenK :: Int -> Int -> [Int] -> [Double] -> ([Int],[Double]) -> ([Int],[Double])
+removeChosenK i j (ki:ks) (pi:ps) (x,y)  
+  -- get rid of the first one
+  | j == 0 = (ks, ps)
+  -- keep some, get rid of ki and pi, but keep rest 
+  | i == j = (x ++ ks, y ++ ps)
+  | otherwise = removeChosenK (i+1) j ks ps (x++[ki], y++[pi])
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- edgies = possibleEdges ant dcg
-
--- what edges can the ant see? -- Should be all of them!! -- That haven't already been walked on.
-possibleEdges ::  Ant -> Digraph -> Digraph
-possibleEdges ant dcg = filter (\x -> and [(connects ant x), (notEndingAtStart x), (notTraversed ant x)]) dcg
---possibleEdges ant dcg = filter (\x -> and [(notTraversed ant x), (connects ant x), (notEndingAtStart x)]) dcg 
-
--- what edges can the ant see? -- have to get back to the start.
--- ant either has been nowhere ..
--- or it has a path.
-possibleLastEdges ::  Ant -> Digraph -> Digraph
-possibleLastEdges (n1,es,s) dcg 
-                  | es == []  = filter (\x -> loopsBack x) dcg -- no existing path
-                  | otherwise = filter (\x -> and [(connects (n1,es,s) x),
-                                                   (leadsBack n1 (last es) x),
-                                                   (notTraversed (n1,es,s) x)]) dcg
-
--- has the ant traversed edge e?
--- this is where we might limit the memory of the ant..
--- type Ant = (Edge, Digraph, Double)  -- Current Location, Path, Score
-notTraversed :: Ant -> Dedge -> Bool
-notTraversed (ed, dig, sc) e = notInSoln e dig 
-
--- type Dedge = (Edge,Edge,Double,Double)    
-
-notInSoln :: Dedge -> [Dedge] -> Bool
-notInSoln e1 [] = True
-notInSoln e1 (e2:es)
-           | e1 == e2 = False 
-           | otherwise = notInSoln e1 es
-
-notEndingAtStart :: Dedge -> Bool -- Dedge (going-to)-(coming-from)
--- don't go back to the start until the end.  
-notEndingAtStart (a1,b1,c1,d1) 
-  | a1 == (("Start1","Start2",1.0,1.0):: Edge) = False
-  | otherwise = True
-                
--- does this ant sit on a node that connects to this edge?
--- dedges are going to be arranged:  (going-to)-(coming-from)
-connects :: Ant -> Dedge -> Bool
-connects (n1, es, s) (a,b,c,d)
-         | n1 == b = True       -- why the c? -- && c > 0 = True
-         | otherwise = False
-
---                       ax               bx
--- last is: ... (("r","s",0.99,0.5),("Start1","Start2",1.0,1.0)
---                       iy
--- want:        (("Start1","Start2",1.0,1.0),("i","j",0.99,0.5),0.0,0.5)
--- does this edge connect back to the given node?  --  (going-to)-(coming-from)
-leadsBack :: Edge -> Dedge -> Dedge -> Bool   -- (i,j,_,_)        - x
-leadsBack e1 (ax,bx,cx,dx) (iy,jy,ky,ly) -- (coming-from) - (going-to)
-  | bx == iy && e1 == jy = True 
-  | otherwise = False
-
--- do the two edges share a vertice?
-shareVert :: Edge -> Edge -> Bool
-shareVert (ax,bx,cx,dx) (ey,fy,gy,hy) 
-          | ax == ey = True
-          | ax == fy = True
-          | bx == ey = True
-          | bx == fy = True
-          | otherwise = False
-
--- A self edge.
-loopsBack :: Dedge -> Bool
-loopsBack (ax,bx,cx,dx) 
-          | ax == bx = True
-          | otherwise = False
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
--- probabilities = List.map edgeProb edgies  
--- type Edge = (Node, Node, Double, Double)  -- From, To, EdgeType, EdgeWeight 
--- type Dedge = (Edge,Edge,Double,Double)    -- From, To, InfoCanPass, Pheromone
--- type Digraph = [Dedge]
 
 -- list of probabilities of taking each edge
-edgeProb :: State -> [Dedge] -> [Double]
-edgeProb s es = map (\x -> x / sumscore) edgescore
-         where edgescore = map (scoreFun s) es
-               sumscore  = sum edgescore
+-- We could probably make this more efficient since many of the entries will ahve the sampe
+-- probabiliies --- if they are not being selected..
+edgeProb :: State -> [Int] -> Idx -> [Double]
+edgeProb s ks idx = map (\x -> x / sumscore) edgescore                           -- ASSUMING --
+         where edgescore = [(compScore s i idx) | i <- ks] :: [Double] -- SHOULD BE IN ORDER OF KS --
+               sumscore  = foldl (+) 0 edgescore
+
+compScore :: State -> Int -> Idx -> Double
+compScore s i idx = scoreFun s (Maybe.fromJust (IM.lookup i idx))
 
 -- the numerator of the probability function  
-scoreFun :: State -> Dedge -> Double
-scoreFun s ((n1,n2,d1,p1),(n3,n4,d2,p2),x,y) = ((d1*d2) ** (alph s)) * (y ** (beta s))
+scoreFun :: State -> Edge -> Double
+scoreFun s (n1,n2,w1,p1,x) = (w1 ** (alph s)) * (p1 ** (beta s))
 
--- to produce a cumulative probabiltiy function
+-- to produce a cumulative probabiltiy function -- retain ordering!
 cumulate :: [Double] -> [Double] -> [Double]
 cumulate []     ys = ys
 cumulate (x:xs) [] = cumulate xs [x]
@@ -244,48 +165,14 @@ getIndex n (die, probs)
   | die < (head probs) = n
   | otherwise          = getIndex (n+1) (die, (tail probs)) 
 
--- The ant might be stuck
-maybeSelect x y 
-  | y == -1 = deadDedge -- error, no possible edges --
-  | otherwise = x !! y
-
-newNode :: Ant -> Dedge -> Edge
-newNode ant theEdge     
-        | (node ant) == (firstist theEdge) = (secondist theEdge)
-        | otherwise                        = (firstist theEdge)
-
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
 
 -- Given the current solution, encoded as an ant, and the best ant, and the 
 -- Directed Cyclic Graph (dcg) -- we score the ant ant return the better.
-checkBest :: State -> Ant -> Ant -> ScoreData -> Ant
-checkBest s currSolnAnt bestSolnAnt enm = x
-          where trimmedAnt = trimAnt s currSolnAnt
-                currSolnScore = score s trimmedAnt enm 
-                currentAnt    = scoreTransfer currSolnScore currSolnAnt
-                x             = bestAnt s currentAnt bestSolnAnt
-
-trimAnt :: State -> Ant -> Ant
--- removes the start and end edges
-trimAnt s (n1, es, scr) 
-  | (k s) == 1 = (n1, (removeStartEdge es), scr)
-  | otherwise = (n1, (init (tail es)), scr)
-                
-removeStartEdge :: Digraph -> Digraph
-removeStartEdge es = newDigraph
-                     where vertices   = map fstsnd es :: [[Edge]]
-                           uVerts     = filter (\x -> noStart x) $ nub $ concat vertices ::  [Edge]   
-                           newDigraph = [((head uVerts), (head uVerts), 1.0, 1.0)] :: Digraph
-
-
-noStart :: Edge -> Bool
-noStart e
-  | e == ("Start1","Start2",1.0,1.0) = False
-  | otherwise = True
-
-scoreTransfer :: Ant -> Ant -> Ant
--- need the full path back
-scoreTransfer from (toNode, toSoln, toScore) = (toNode, toSoln, (fitness from))
+checkBest :: State -> Ant -> Ant -> SM Double -> Idx -> Ant
+checkBest s currSolnAnt bestSolnAnt sparse idx = trace ("x: " ++ show x) x
+          where currentAnt = score s currSolnAnt sparse idx
+                x          = bestAnt s currentAnt bestSolnAnt
 
 -- First time around, we need to get rid of the random ant.
 bestAnt :: State -> Ant -> Ant -> Ant
@@ -303,14 +190,14 @@ bestAnt s currSolnAnt bestSolnAnt
 
 updateSolns :: Ant -> State -> State
 updateSolns ant s = s'
-                where path   = solution ant :: Digraph
-                      thisScore  = fitness ant  :: Double
-                      s'     = checkUpdate s thisScore path
+                where path      = solution ant :: [Int]
+                      thisScore = fitness  ant :: Double
+                      s'        = checkUpdate s thisScore path
 
 -- The head of solns is the best ever ... over all restarts
 -- The middle is the best for this restart
 -- The current best for this iteration of ants
-checkUpdate :: State -> Double -> Digraph -> State
+checkUpdate :: State -> Double -> [Int] -> State
 checkUpdate s thisScore path 
     -- new best so far
   | (fst (bestEver s)) <= thisScore && (fst (bestRest s) <= thisScore) = 
@@ -328,22 +215,21 @@ resetSol s = s {bestRest=(0.0, []), bestIter=(0.0, [])}
 -- update Network --
 -------------------------------------------------------------------------------------------------------------------------
 
-updateDigraph :: Digraph -> State -> Digraph 
-updateDigraph digraph s = updateDigraph' digraph s (proportional s) []
+updateIdx :: Idx -> State -> Idx
+updateIdx idx s = updateIdx' idx s (proportional s)
 
-updateDigraph' :: Digraph -> State -> (Double,Double) -> Digraph -> Digraph
-updateDigraph' [] s ab newgraph = newgraph
-updateDigraph' (d:digraph) s ab newgraph 
-  = updateDigraph' digraph s ab ((edgeupd s ab d) : newgraph )
-
--- take edge 
--- is the edge in the restart best or the iteration best or both or neither
-
-edgeupd :: State -> (Double,Double) -> Dedge -> Dedge
-edgeupd s (iterp,restp) (a1,b1,c1,d1) = (a1,b1,c1,zzz) -- add to the pheromone
-                          where (inIter,inRest) = inSolutions s (a1,b1,c1,d1) 
-                                deposited = inIter * iterp + inRest * restp
-                                zzz = bounded $ d1 + (evap s) * (deposited - d1) 
+updateIdx' :: Idx -> State -> (Double,Double) -> Idx
+-- the best results are carried in the state
+updateIdx' idx s (iterp,restp) = IM.fromList [(newIdx i idx s iterp restp) | i <- IM.keys idx] 
+                                        
+newIdx :: Int -> Idx -> State -> Double -> Double -> (Int, Edge)
+-- is this edge in the solutions, iter or restart bests?
+newIdx i idx s iterp restp = (i, newEdge)
+  where (n1,n2,wt,ph,pi) = fromJust $ IM.lookup i idx
+        (inIter, inRest) = inSolutions s i
+        deposited = inIter * iterp + inRest * restp
+        ph' = bounded $ ph + (evap s) * (deposited - ph)
+        newEdge = (n1,n2,wt,ph',(inIter+inRest+pi)) :: Edge
 
 proportional :: State -> (Double,Double)
 -- (iteration best, restart best) --
@@ -354,24 +240,16 @@ proportional s
   | cval >= 0.8               = (1.0, 0.0) -- just started out, use iteration best
   where cval = (c s)
                 
-inSolutions :: State -> Dedge -> (Double, Double)
+inSolutions :: State -> Int -> (Double, Double)
 -- edge is ... (in iteration best, in restart best)
-inSolutions s dxy  
+inSolutions s i
   | inRest && inIter = (1.0,1.0)
   | inRest           = (0.0,1.0)
   | inIter           = (1.0,0.0)
   | otherwise        = (0.0,0.0)
-  where inRest = edgeElem dxy (snd (bestRest s)) -- needs to be in either direction
-        inIter = edgeElem dxy (snd (bestIter s)) -- to update both edges
-
-edgeElem :: Dedge -> [Dedge] -> Bool
--- doesn't matter what order the two edges are..
-edgeElem d1 [] = False
-edgeElem (a1,b1,c1,d1) ((e1,f1,g1,h1):ds)   
-  | a1 == e1 && b1 == f1 = True
-  | b1 == e1 && a1 == f1 = True
-  | otherwise = edgeElem (a1,b1,c1,d1) ds
-
+  where inRest = elem i (snd (bestRest s)) -- needs to be in either direction
+        inIter = elem i (snd (bestIter s)) -- to update both edges
+        
 bounded :: Double -> Double
 bounded b 
         | b < 0.001 = 0.001
@@ -384,11 +262,11 @@ bounded b
 
 -- will they be in the same order? -- 
 
-convergence :: State -> Digraph -> State
+convergence :: State -> Idx -> State
 -- all of the pheromone values are close to 0 or 1
-convergence s digraph = s {c = convergeFactor, ptoKratio = ((sum doublelist) / (2*(0.999-0.001)*((k s)+1)))}
-            where normfactor = (0.999-0.001) * (fromIntegral (length digraph) :: Double)
-                  doublelist = pheroVals digraph  
+convergence s idx = s {c = convergeFactor, ptoKratio = ((sum doublelist) / (2*(0.999-0.001)*((k s)+1)))}
+            where normfactor = (0.999-0.001) * (fromIntegral (IM.size idx) :: Double)
+                  doublelist = pheroVals idx  
                   convergeFactor = 1 - (2 * (((sum (map convNum doublelist)) / normfactor)  - 0.5))
                   
 --trace (show (take 10 (pheroVals digraph)))
@@ -396,13 +274,13 @@ convergence s digraph = s {c = convergeFactor, ptoKratio = ((sum doublelist) / (
 convNum :: Double -> Double
 convNum x1 = maximum [0.999-x1, x1-0.001]
 
-pheroVals :: Digraph -> [Double]
-pheroVals digraph = map (\(a1,b1,c1,d1) -> d1) digraph
+pheroVals :: Idx -> [Double]
+pheroVals idx = Prelude.map (\(a1,b1,c1,d1,e1) -> d1) (IM.elems idx)
 
 -------------------------------------------------------------------------------------------------------------------------
 -- Local Optimization --
 -------------------------------------------------------------------------------------------------------------------------
-
+{-
 localOptimize :: State -> Digraph -> ScoreData -> Ant -> Ant
 localOptimize s digraph scoredata ant
               | (local s) == 1 = localOptimize' s digraph scoredata ant
@@ -424,7 +302,7 @@ maybeUpdate (asoln:solns) (ascore:scores) oneSoln oneScore
            | otherwise = maybeUpdate solns scores oneSoln oneScore
 
 --trace ("Local Opt. " ++ (show ascore) ++ "   " ++ (show oneScore)) 
-
+-}
 -------------------------------------------------------------------------------------------------------------------------
 -- END OF LINE --
 -------------------------------------------------------------------------------------------------------------------------

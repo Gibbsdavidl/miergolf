@@ -1,4 +1,6 @@
 # ignore compiled files
 *.o
 *.hi
+*.pyc
+*~
 src/Main

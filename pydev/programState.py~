@@ -1,0 +1,7 @@
+
+
+
+def initProgramState (args):
+    for a in args:
+        print (a)
+    return(0)

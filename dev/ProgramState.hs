@@ -22,7 +22,7 @@ module ProgramState
 ,emptyState
 ,isEmptyState
 ,damp
-,runs,ants,ct,tx,rx,local,evap,alph,beta
+,runs,ants,ct,tx,rx,local,evap,alph,beta,node,solution
 ,bestEver,bestRest,bestIter, ptoKratio
 ,g,config,graphfile,randomSeed,c,k,runsDone
 ) where
@@ -45,9 +45,9 @@ data State =
              evap :: Double, -- the evaporation rate
              alph :: Double,  -- alpha in the ant op. algorithm
              beta :: Double,  -- beta in the ant op. algorithm
-             bestEver :: [Int], -- best over all
-             bestRest :: [Int], -- best since the last restart
-             bestIter :: [Int], -- best this ant-iteration.
+             bestEver :: (Double,[Int]), -- best over all
+             bestRest :: (Double,[Int]), -- best since the last restart
+             bestIter :: (Double,[Int]), -- best this ant-iteration.
              g  :: StdGen, -- the random generator
              config :: String, -- the configuration file
              graphfile :: String, -- the graph data file
@@ -94,9 +94,9 @@ fillState1 gen xs y z = State {runs = read (xs !! 1) :: Int,
                           beta  = read (xs !! 8) :: Double,
                           tx = read (xs !! 9) :: Double,
                           rx = read (xs !! 10) :: Double,
-                          bestEver = [] :: [Int],
-                          bestRest = [] :: [Int],
-                          bestIter = [] :: [Int],
+                          bestEver = (0.0,[]) :: (Double,[Int]),
+                          bestRest = (0.0,[]) :: (Double,[Int]),
+                          bestIter = (0.0,[]) :: (Double,[Int]),
                           g = gen,
                           randomSeed = 0,
                           config = y,
@@ -107,8 +107,8 @@ fillState1 gen xs y z = State {runs = read (xs !! 1) :: Int,
                           runsDone = 0
                      }
 
-showState :: State -> Digraph -> String
-showState s digraph = 
+showState :: State -> String
+showState s = 
   (show (config s)) ++ "\t" ++ 
   (show (graphfile s)) ++ "\t" ++ 
   (show (randomSeed s)) ++ "\t" ++
@@ -143,9 +143,9 @@ fillState2 xs y z = State {runs = read (xs !! 1) :: Int,
                           beta  = read (xs !! 8) :: Double,
                           tx = read (xs !! 9) :: Double,
                           rx = read (xs !! 10) :: Double,
-                          bestEver = [] :: [Int],
-                          bestRest = [] :: [Int],
-                          bestIter = [] :: [Int],
+                          bestEver = (0.0,[]) :: (Double,[Int]),
+                          bestRest = (0.0,[]) :: (Double,[Int]),
+                          bestIter = (0.0,[]) :: (Double,[Int]),
                           g = mkStdGen (read (xs !! 11) :: Int),
                           randomSeed = (read (xs !! 11) :: Int),
                           config = y,
@@ -173,9 +173,9 @@ emptyState = State {runs = 0 :: Int,
                     beta  = 0.0 :: Double,
                     tx = 0.0 :: Double,
                     rx = 0.0 :: Double,
-                    bestEver = [] :: [Int],
-                    bestRest = [] :: [Int] ,
-                    bestIter = [] :: [Int],
+                    bestEver = (0.0,[]) :: (Double,[Int]),
+                    bestRest = (0.0,[]) :: (Double,[Int]),
+                    bestIter = (0.0,[]) :: (Double,[Int]),
                     g = mkStdGen 100,
                     config = "x",
                     graphfile = "y",
