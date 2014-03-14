@@ -1,4 +1,3 @@
-# configuration for test graph 2
 number of restarts : 5
 number of ants     : 15
 converge threshold : 0.001
@@ -9,5 +8,4 @@ alpha              : 1.0
 beta               : 1.0
 transmit threshold : 0.2
 receive threshold  : 0.2
-random seed        : Random
 k                  : 4
