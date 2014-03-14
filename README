@@ -10,7 +10,7 @@ To run this program:  python main.py config1.txt graphfile.txt
 See the test dir for example files, but...
 The config file must look like:
 
-----------------------------
+---------------------------- (top of the file)
 number of restarts : 1
 number of ants     : 10
 converge threshold : 0.001
@@ -21,13 +21,12 @@ alpha              : 1.0
 beta               : 1.0
 transmit threshold : 0.2
 receive threshold  : 0.2
-random seed        : Random
 k                  : 1
 
 
 The graph file must look like:
 (from) [tab] (to) [tab] (weight)
-
+----------------(top of file)
 a	i	0.5
 b	i	0.5
 c	i	0.5
