@@ -14,14 +14,15 @@ The config file must look like:
 number of restarts : 1
 number of ants     : 10
 converge threshold : 0.001
-local optimization : 0
+local optimization : 1       (0 or 1)
 evaporation rate   : 0.3
 dampening          : 0.7
 alpha              : 1.0
 beta               : 1.0
-transmit threshold : 0.2
-receive threshold  : 0.2
-k                  : 1
+transmit threshold : 0.2     
+receive threshold  : 0.2     
+k                  : 1       (1 or more)
+parallel cpus      : 2       (1 or more)
 
 
 The graph file must look like:
