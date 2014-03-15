@@ -22,6 +22,7 @@ run it by: python main.py config_file graph_file
 
 import sys
 import getopt
+import multiprocessing as mp
 
 def main():
     # parse command line options
@@ -38,13 +39,18 @@ def main():
             sys.exit(0)
     # process arguments
     s = initProgramState (args)
+    cpus = s["cpus"]
+    pool = mp.Pool(cpus)
     (nodes, sparseMat) = buildGraph (s)
-    s2 = optimize (s, nodes, sparseMat)
+    s2 = optimize (pool, s, nodes, sparseMat)
+    pool.close()
     printResults(s2,nodes)
 
 
 def printResults(s,nodes):
-    print s["bestEver"]
+    print "Iterations: " + str(s["iters"])
+    print "Solution  : " + str(s["bestEver"])
+    print "Selected Edges: "
     for (i,k) in nodes.items():
         if i in s["bestEver"][1]:
             print str(i) +"   " + str(k)

@@ -5,14 +5,14 @@ import scipy.sparse.linalg as lin
 import numpy as np
 from bisect import bisect
 from random import random
+import itertools as it
 
-# Ant Optimization #
-
-
-def optimize (s, nodes, sparseMat):
+# Hypercube MinMax Ant Optimization #
+def optimize (pool, s, nodes, sparseMat):
 
     # for each new convergence #
     for run in xrange(s["runs"]):
+        print "RUN: " + str(run) 
 
         # prepare for this reset-run #
         nodes = resetNodes(nodes)
@@ -28,14 +28,14 @@ def optimize (s, nodes, sparseMat):
             solns = [genSoln(i,s,np.copy(ps)) for i in xrange(s["ants"])]
                 
             # score each solution, choose the best #
-            scores = [scoreSoln(solni,sparseMat) for solni in solns]
+            scores = computeScores(pool, s, solns, sparseMat)
             idx    = scores.index(max(scores))
-            
-            # perform local optimization ... maybe #
-            (bestSoln,bestScore) = localOpt(s, solns[idx], scores[idx], nodes, sparseMat) 
+
+            # perform local optimization ... if set in s["local"] #
+            (bestSoln,bestScore) = parLocalOpt(pool, s, solns[idx], scores[idx], nodes, sparseMat) 
 
             # update the best/resetbest/iterbests #
-            s = updateSolutionSet(s, bestSoln, bestScore)
+            s = updateSolutionSet(s, bestSoln, bestScore, iters)
 
             # update the pheromones #
             nodes = updatePheromones(s, nodes)
@@ -43,6 +43,8 @@ def optimize (s, nodes, sparseMat):
             # check for convergence #
             s = checkConvergence(s, nodes)
             iters += 1
+            s["iters"] = iters
+
     return(s)
             
 
@@ -56,6 +58,7 @@ def resetNodes(nodes):
 def resetState(s):
     s["bestRest"] = (0.0,[])
     s["bestIter"] = (0.0,[])
+    s["c"] = 1.0
     return(s)
 
     
@@ -77,9 +80,14 @@ def genSoln(i, s, ps):
     return(soln)
 
 
-def scoreSoln(ss,smat):
+def computeScores(pool, s, solns, sparseMat):
+    scoreDat = it.izip(solns, it.repeat(sparseMat, len(solns)))
+    scores = pool.map(scoreSoln, scoreDat)
+    return(scores)
+
+
+def scoreSoln( (ss,smat) ):
     # ss    -- the solutions set S
-    # state -- the program state
     # smat  -- nxn sparse matrix
     # ts    -- the set T
     n = (smat.shape[0]-1)
@@ -100,28 +108,37 @@ def subMatrix(rows, cols, A):
     return(A.tocsr()[rows,:].tocsc()[:,cols])
 
 
-def localOpt(s, bestSoln, bestScore, nodes, sparseMat):
+def parLocalOpt(pool, s, bestSoln, bestScore, nodes, sparseMat):
     if s["local"] != 1:
+        # go back! go back!
         return (bestSoln, bestScore)
     else:
-        newBestSoln = list(bestSoln); newBestScore = bestScore 
+         # build a list of possible solns
+        newSolnList = []
+        trySoln = []
         for i in xrange(len(bestSoln)):
             for ni in xrange(len(nodes)):
                 if ni not in bestSoln:
                     trySoln = list(bestSoln)
                     trySoln[i] = ni
-                    tryScore = scoreSoln(trySoln, sparseMat)
-                    if tryScore > newBestScore:
-                        print ("local improvement found.. " 
-                               + str(bestSoln) +"   "+ str(trySoln) 
-                               + "  old score: " + str(bestScore) 
-                               + "  new score: " + str(tryScore)) 
-                        newBestSoln  = trySoln
-                        newBestScore = tryScore
-        return( (newBestSoln, newBestScore) )
-    
+                    newSolnList.append(list(trySoln))
 
-def updateSolutionSet(s, bestSoln, bestScore):
+        # then score each potential solution
+        scores = computeScores(pool, s, newSolnList, sparseMat)
+        idx    = scores.index(max(scores))
+
+        # anything better?
+        if scores[idx] > bestScore:
+            print ("   local improvement found.. " 
+                   + str(bestSoln) +"   "+ str(trySoln) 
+                   + "  old score: " + str(bestScore) 
+                   + "  new score: " + str(scores[idx])) 
+            return( (newSolnList[idx], scores[idx]) )
+        else:
+            return (bestSoln, bestScore)
+
+
+def updateSolutionSet(s, bestSoln, bestScore, iters):
     if bestScore > s["bestEver"][0]:
         s["bestEver"] = (bestScore, bestSoln)
     if bestScore > s["bestRest"][0]:
@@ -182,19 +199,4 @@ def checkConvergence(s, nodes):
 def convNum(x):
     return(max(0.999-x, x-0.001))
 
-
-#convergence :: State -> Idx -> State
-#-- all of the pheromone values are close to 0 or 1
-#convergence s idx = s {c = convergeFactor, ptoKratio = ((sum doublelist) / (2*(0.999-0.001)*((k s)+1)))}
-#            where normfactor = (0.999-0.001) * (fromIntegral (IM.size idx) :: Double)
-#                  doublelist = pheroVals idx  
-#                  convergeFactor = 1 - (2 * ((   ( sum (map convNum doublelist)   ) / normfactor)  - 0.5))
-                  
-#--trace (show (take 10 (pheroVals digraph)))
-
-#convNum :: Double -> Double
-#convNum x1 = maximum [0.999-x1, x1-0.001]
-
-#pheroVals :: Idx -> [Double]
-#pheroVals idx = Prelude.map (\(a1,b1,c1,d1,e1) -> d1) (IM.elems idx)
 

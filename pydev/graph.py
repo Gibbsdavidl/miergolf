@@ -1,6 +1,6 @@
 
-from scipy.sparse import csc_matrix
-
+from scipy.sparse import csc_matrix, lil_matrix
+from sys import exit
 
 def buildGraph(s):
     # read in the network #
@@ -27,8 +27,18 @@ def buildGraph(s):
 
     # build the sparse matrix
     n = len(nodeDict)
-    sparseMat   = csc_matrix( (data,(row,col)), shape=(n,n) )
-    return((nodeDict,sparseMat))
+    sparseMat = csc_matrix( (data,(row,col)), shape=(n,n) )
+    sparseLil = lil_matrix(sparseMat)
+    
+    # Then to normalize the rows ... and to apply dampening to the 
+    # probabilities.
+    for r in xrange(n):
+        rowsum = (sparseLil[r,:]).sum()
+        if rowsum != 0.0:
+            for c in xrange(n):
+                sparseLil[r,c] = (sparseLil[r,c]/rowsum) * s["damp"]
+
+    return((nodeDict,csc_matrix(sparseLil)))
 
 
 

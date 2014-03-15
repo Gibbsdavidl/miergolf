@@ -9,4 +9,4 @@ beta              : 1.0
 transmit threshold: 0.2
 receive threshold : 0.2
 k                 : 2
-
+parallel scoring  : 0

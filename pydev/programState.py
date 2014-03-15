@@ -21,8 +21,10 @@ def initProgramState (args):
                     "graphfile" : args[1],
                     "c" : 1.0,
                     "k"    : float(programArgs[10]),
+                    "cpus"  : int(programArgs[11]),
                     "ptoKratio" : 0.0,
-                    "runsDone" : 0}
+                    "runsDone" : 0,
+                    "iters" : 0}
     return(programState)
 
 
