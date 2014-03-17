@@ -35,6 +35,7 @@ import System.Random
 import Numeric.LinearAlgebra
 import Data.List (nub)
 import Data.Time.Clock.POSIX
+import Debug.Trace
 
 data State = 
   State {    runs :: Int,  -- the number of restarts

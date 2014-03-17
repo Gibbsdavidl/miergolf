@@ -129,10 +129,10 @@ def parLocalOpt(pool, s, bestSoln, bestScore, nodes, sparseMat):
 
         # anything better?
         if scores[idx] > bestScore:
-            print ("   local improvement found.. " 
-                   + str(bestSoln) +"   "+ str(trySoln) 
-                   + "  old score: " + str(bestScore) 
-                   + "  new score: " + str(scores[idx])) 
+            #print ("   local improvement found.. " 
+            #       + str(bestSoln) +"   "+ str(trySoln) 
+            #       + "  old score: " + str(bestScore) 
+            #       + "  new score: " + str(scores[idx])) 
             return( (newSolnList[idx], scores[idx]) )
         else:
             return (bestSoln, bestScore)
