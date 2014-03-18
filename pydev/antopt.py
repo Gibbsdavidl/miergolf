@@ -25,7 +25,7 @@ def optimize (pool, s, nodes, sparseMat):
             ps = genProbs(s,nodes)
 
             # for each new ant, generate a solution
-            solns = [genSoln(i,s,np.copy(ps)) for i in xrange(s["ants"])]
+            solns = generateSolutions(pool, s, np.copy(ps))
                 
             # score each solution, choose the best #
             scores = computeScores(pool, s, solns, sparseMat)
@@ -69,7 +69,13 @@ def genProbs(s,nodes):
     return(ps)
 
 
-def genSoln(i, s, ps):
+def generateSolutions(pool, s, ps):
+    antdat = it.izip(xrange(s["ants"]), it.repeat(s, s["ants"]), it.repeat(ps, s["ants"]))
+    solns = pool.map(genSoln, antdat)
+    return(solns)
+
+    
+def genSoln((i, s, ps)):
     soln = []
     for ki in xrange(int(s["k"])):
         ps = ps/(sum(ps)) # after removing one ... renorm the probs
