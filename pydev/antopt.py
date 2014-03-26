@@ -194,11 +194,7 @@ def bounded(x):
 
 def checkConvergence(s, nodes):
     normfactor = (0.999-0.001) * len(nodes)
-    #ps = [p for (i,(a,b,c,p,e)) in nodes.items()]
-    ps = []
-    for k in nodes.keys():
-        ps.append(nodes[k][3])
-    #print ps
+    ps = [p for (i,(a,b,c,p,e)) in nodes.items()]
     convergence = 1.0 - 2.0 * (( sum(map(convNum, ps)) / normfactor ) - 0.5 )
     pToKRatio = (sum (ps)) / ((0.999-0.001) * s["k"])
     s["c"] = convergence

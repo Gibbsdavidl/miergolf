@@ -2,7 +2,7 @@ number of restarts: 3
 number of ants    : 10
 converge threshold: 0.00001
 local optimization: 1
-evaporation rate  : 0.1
+evaporation rate  : 0.3
 dampening         : 0.7
 alpha             : 1.0
 beta              : 1.0
