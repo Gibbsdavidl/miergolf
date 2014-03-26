@@ -15,7 +15,7 @@
 """
 mipdao
 
-Maximum Influence Problem by Diffusion models and Ant Optimization.
+Maximization of Influence Problem by Diffusion models and Ant Optimization.
 
 run it by: python main.py config_file graph_file
 """
@@ -37,6 +37,7 @@ def main():
         if o in ("-h", "--help"):
             print __doc__
             sys.exit(0)
+
     # process arguments
     s = initProgramState (args)
     cpus = s["cpus"]
@@ -54,6 +55,14 @@ def printResults(s,nodes):
     for (i,k) in nodes.items():
         if i in s["bestEver"][1]:
             print str(i) +"   " + str(k)
+
+
+def printGraph(flag, sparseMat):
+    if flag == 1:
+        pprint(sparseMat)
+        sys.exit(0)
+    else:
+        return()
 
 
 if __name__ == "__main__":

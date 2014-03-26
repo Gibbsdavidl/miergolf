@@ -1,12 +1,12 @@
 number of restarts : 5
-number of ants     : 100
+number of ants     : 10
 converge threshold : 0.001
-local optimization : 0
-evaporation rate   : 0.05
+local optimization : 1
+evaporation rate   : 0.25
 dampening          : 0.7
 alpha              : 1.0
 beta               : 1.0
 transmit threshold : 0.2
 receive threshold  : 0.2
-k                  : 10
-parallel cpus      : 7
+k                  : 4
+parallel cpus      : 4

@@ -26,14 +26,14 @@ def optimize (pool, s, nodes, sparseMat):
 
             # for each new ant, generate a solution
             solns = generateSolutions(pool, s, np.copy(ps))
-                
+                            
             # score each solution, choose the best #
             scores = computeScores(pool, s, solns, sparseMat)
             idx    = scores.index(max(scores))
-
+            
             # perform local optimization ... if set in s["local"] #
             (bestSoln,bestScore) = parLocalOpt(pool, s, solns[idx], scores[idx], nodes, sparseMat) 
-
+             
             # update the best/resetbest/iterbests #
             s = updateSolutionSet(s, bestSoln, bestScore, iters)
 
@@ -194,13 +194,19 @@ def bounded(x):
 
 def checkConvergence(s, nodes):
     normfactor = (0.999-0.001) * len(nodes)
-    ps = [p for (i,(a,b,c,p,e)) in nodes.items()]
-    convergence = 1.0 - ( 2.0 * ( sum(map(convNum, ps)) / normfactor ) - 0.5)
+    #ps = [p for (i,(a,b,c,p,e)) in nodes.items()]
+    ps = []
+    for k in nodes.keys():
+        ps.append(nodes[k][3])
+    #print ps
+    convergence = 1.0 - 2.0 * (( sum(map(convNum, ps)) / normfactor ) - 0.5 )
     pToKRatio = (sum (ps)) / ((0.999-0.001) * s["k"])
     s["c"] = convergence
     s["pTokRatio"] = pToKRatio
     return(s)
 
+def divn(x, n):
+    round(x/n)
 
 def convNum(x):
     return(max(0.999-x, x-0.001))
