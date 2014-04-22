@@ -1,0 +1,8 @@
+RutR	NemA	0.167
+RutR	NemR	0.833
+RutR	gloA	0.183
+NemR	NemA	0.067
+NemR	gloA	0.041
+MicA	gloA	0.225
+RutR	RutR	0.1
+NemR	NemR	0.1
