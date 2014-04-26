@@ -25,6 +25,7 @@ def initProgramState (args):
                     "k"    : float(programArgs[12]),
                     "cpus"  : int(programArgs[13]),
                     "lineGraph" : programArgs[14],
+                    "permutes" : int(programArgs[15]),
                     "ptoKratio" : 0.0,
                     "runsDone" : 0,
                     "iters" : 0}
