@@ -50,21 +50,13 @@ def main():
 
 def printResults(s,nodes):
     print "Graph Type: " + str(s["lineGraph"])
-    print "OptimizeTo: " + str(s["opton"])
-    print "Mode:       " + str(s["mode"])
-    print "Tx: " + str(s["tx"]) +"  Rx: "+str(s["rx"])
-    print "Dampening:  " + str(s["damp"])
-    print "Ants:       " + str(s["ants"])
-    print "Local Opt : " + str(s["local"])
     print "Iterations: " + str(s["iters"])
-    print "config file " + str(s["config"])
-    print "graph file: " + str(s["graphfile"]) 
     print "Solution  : " + str(s["bestEver"])
     print "Selected Edges: "
     for (i,k) in nodes.items():
-        if i in s["bestEver"][2] or k[3] > 0.7:
+        if i in s["bestEver"][1]:
             print str(i) +"   " + str(k)
-            
+
 
 def printGraph(flag, sparseMat):
     if flag == 1:

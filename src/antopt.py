@@ -29,7 +29,7 @@ def optimize (pool, s, nodes, sparseMat):
                             
             # score each solution, choose the best #
             scores = computeScores(pool, s, solns, sparseMat)
-            idx    = maxscore(scores)
+            idx    = scores.index(max(scores))
             
             # perform local optimization ... if set in s["local"] #
             (bestSoln,bestScore) = parLocalOpt(pool, s, solns[idx], scores[idx], nodes, sparseMat) 
@@ -44,13 +44,9 @@ def optimize (pool, s, nodes, sparseMat):
             s = checkConvergence(s, nodes)
             iters += 1
             s["iters"] = iters
-        #(f,h) = scoreMats(s["bestEver"][2], s, sparseMat)
-        #print "F"
-        #print f
-        #print "H"
-        #print h
-    return(s)
 
+    return(s)
+            
 
 def resetNodes(nodes):
     for k in nodes.keys():
@@ -60,8 +56,8 @@ def resetNodes(nodes):
 
 
 def resetState(s):
-    s["bestRest"] = (0.0,0.0,[])
-    s["bestIter"] = (0.0,0.0,[])
+    s["bestRest"] = (0.0,[])
+    s["bestIter"] = (0.0,[])
     s["c"] = 1.0
     return(s)
 
@@ -93,97 +89,38 @@ def genSoln((i, s, ps)):
 
 
 def computeScores(pool, s, solns, sparseMat):
-    scoreDat = it.izip(solns, it.repeat( (s,sparseMat), len(solns)))
+    scoreDat = it.izip(solns, it.repeat(sparseMat, len(solns)))
     scores = pool.map(scoreSoln, scoreDat)
     return(scores)
 
 
-def scoreSoln( (solns, (s,smat)) ):
+def scoreSoln( (ss,smat) ):
     # ss    -- the solutions set S
     # smat  -- nxn sparse matrix
     # ts    -- the set T
     n = (smat.shape[0]-1)
-    ts = [i for i in xrange(n) if i not in solns]
+    ts = [i for i in xrange(n) if i not in ss]
     idn = sp.eye(len(ts))
-    pst = subMatrix(solns, ts, smat)
-    pts = subMatrix(ts, solns, smat)
-    ptt = subMatrix(ts, ts, smat)
-    lap = sp.csc_matrix(idn-ptt)
-    pst_t = sp.csc_matrix(pst.transpose())
-    lap_t = sp.csc_matrix(lap.transpose())    
-    if s["mode"] == "both":
-        f = lin.spsolve(lap, pts) 
-        h = lin.spsolve(lap_t, pst_t)
-        if type(f) == type(np.array([])): # came back as an array
-            ftouch = sum(f > s["tx"])
-            htouch = sum(h > s["rx"])
-        else: # came back as a sparse matrix
-            ftouch = sum(f.toarray().flatten() > s["tx"])
-            htouch = sum(h.toarray().flatten() > s["rx"])
-            #         best score  ... best touch       #
-            return((f.sum()+h.sum(), ftouch+htouch))
-    elif s["mode"] == "tx":
-        f = lin.spsolve(lap, pts) 
-        if type(f) == type(np.array([])): # came back as an array
-            ftouch = sum(f > s["tx"])
-        else: # came back as a sparse matrix
-            ftouch = sum(f.toarray().flatten() > s["tx"])
-            #         best score  ... best touch       #
-            return((f.sum(), ftouch))
-    elif s["mode"] == "rx":
-        h = lin.spsolve(lap_t, pst_t)
-        if type(h) == type(np.array([])): # came back as an array
-            htouch = sum(h > s["rx"])
-        else: # came back as a sparse matrix
-            htouch = sum(h.toarray().flatten() > s["rx"])
-            #         best score  ... best touch       #
-            return((h.sum(), htouch))
-    else:
-        print "Error! mode must be rx, tx, or both."
-        sys.exit(1)
-        
-
-def scoreMats(solns, s, smat):
-    # ss    -- the solutions set S
-    # smat  -- nxn sparse matrix
-    # ts    -- the set T
-    n = (smat.shape[0]-1)
-    ts = [i for i in xrange(n) if i not in solns]
-    idn = sp.eye(len(ts))
-    pst = subMatrix(solns, ts, smat)
-    pts = subMatrix(ts, solns, smat)
+    pst = subMatrix(ss, ts, smat)
+    pts = subMatrix(ts, ss, smat)
     ptt = subMatrix(ts, ts, smat)
     lap = sp.csc_matrix(idn-ptt)
     pst_t = sp.csc_matrix(pst.transpose())
     lap_t = sp.csc_matrix(lap.transpose())    
     f = lin.spsolve(lap, pts) 
     h = lin.spsolve(lap_t, pst_t)
-    return((f,h))
+    return(f.sum() + h.sum())
 
 
 def subMatrix(rows, cols, A):
     return(A.tocsr()[rows,:].tocsc()[:,cols])
 
 
-def maxscore(scores):
-    best = 0
-    idx = 0
-    m = -1
-    for (a,b) in scores:
-        if a > m:
-            m = a
-            best = idx
-        idx += 1
-    return(best)
-
-    
-def parLocalOpt(pool, s, bestSoln,
-                (bestScore,bestTouch),
-                nodes, sparseMat):
-    if s["local"] == -1:   # none
+def parLocalOpt(pool, s, bestSoln, bestScore, nodes, sparseMat):
+    if s["local"] != 1:
         # go back! go back!
-        return (bestSoln,(bestScore,bestTouch))
-    elif s["local"] == 0:  # full optimization, slow!
+        return (bestSoln, bestScore)
+    else:
          # build a list of possible solns
         newSolnList = []
         trySoln = []
@@ -193,89 +130,58 @@ def parLocalOpt(pool, s, bestSoln,
                     trySoln = list(bestSoln)
                     trySoln[i] = ni
                     newSolnList.append(list(trySoln))
-    else:
-        # compute a smaller local area around the result.
-        newSolnList = []
-        trySolnUp = []; trySolnDn = [];
-        for i in xrange(len(bestSoln)):
-            for ni in range(1,s["local"]):  # the local search range
-                trySolnUp = trySolnDn = list(bestSoln)
-                trySolnUp[i] = max((bestSoln[i]+ni),len(nodes))
-                trySolnDn[i] = min(0, (bestSoln[i]-ni))
-                newSolnList.append(list(trySolnUp))
-                newSolnList.append(list(trySolnDn))
-                    
-    # then score each potential solution
-    scores = computeScores(pool, s, newSolnList, sparseMat)
-    idx    = maxscore(scores)
 
-    # anything better?
-    if scores[idx][0] > bestScore:
-        return( (newSolnList[idx], scores[idx]) )
-    else:
-        return (bestSoln,(bestScore,bestTouch))
-        
+        # then score each potential solution
+        scores = computeScores(pool, s, newSolnList, sparseMat)
+        idx    = scores.index(max(scores))
 
-def updateSolutionSet(s, bestSoln, (bestScore,bestTouch), iters):
-    if s["opton"] == "score":
-        if bestScore > s["bestEver"][0]:
-            s["bestEver"] = (bestScore, bestTouch, bestSoln)
-        if bestScore > s["bestRest"][0]:
-            s["bestRest"] = (bestScore, bestTouch, bestSoln)
-        if bestScore > s["bestIter"][0]:
-            s["bestIter"] = (bestScore, bestTouch, bestSoln)
-    elif s["opton"] == "touch": 
-        if bestTouch > s["bestEver"][1]:
-            s["bestEver"] = (bestScore, bestTouch, bestSoln)
-        if bestTouch > s["bestRest"][1]:
-            s["bestRest"] = (bestScore, bestTouch, bestSoln)
-        if bestTouch > s["bestIter"][1]:
-            s["bestIter"] = (bestScore, bestTouch, bestSoln)
-    elif s["opton"] == "combo":
-        if bestTouch*bestScore > s["bestEver"][1]*s["bestEver"][0]:
-            s["bestEver"] = (bestScore, bestTouch, bestSoln)
-        if bestTouch*bestScore > s["bestRest"][1]*s["bestRest"][0]:
-            s["bestRest"] = (bestScore, bestTouch, bestSoln)
-        if bestTouch*bestScore > s["bestIter"][1]*s["bestIter"][0]:
-            s["bestIter"] = (bestScore, bestTouch, bestSoln)
-    else:
-        print "Error! config option 'opton' must be score, touch, or combo"
-        sys.exit(1)
+        # anything better?
+        if scores[idx] > bestScore:
+            #print ("   local improvement found.. " 
+            #       + str(bestSoln) +"   "+ str(trySoln) 
+            #       + "  old score: " + str(bestScore) 
+            #       + "  new score: " + str(scores[idx])) 
+            return( (newSolnList[idx], scores[idx]) )
+        else:
+            return (bestSoln, bestScore)
+
+
+def updateSolutionSet(s, bestSoln, bestScore, iters):
+    if bestScore > s["bestEver"][0]:
+        s["bestEver"] = (bestScore, bestSoln)
+    if bestScore > s["bestRest"][0]:
+        s["bestRest"] = (bestScore, bestSoln)
+    if bestScore > s["bestIter"][0]:
+        s["bestIter"] = (bestScore, bestSoln)
     return(s)
 
 
 def updatePheromones(s, nodes):
-    (iterp, restp, bestp) = pheroProportions(s)
-    restartSoln = s["bestRest"][2]
-    iterateSoln = s["bestIter"][2]
-    bestSoln    = s["bestEver"][2]
+    (iterp, restp) = pheroProportions(s)
+    restartSoln = s["bestRest"][1]
+    iterateSoln = s["bestIter"][1]
     for k in nodes.keys():
         (a,b,w,p,ch) = nodes[k]
         inRest = int(k in restartSoln)
         inIter = int(k in iterateSoln)
-        inBest = int(k in bestSoln)
-        deposit = inIter * iterp + inRest * restp + inBest * bestp
+        deposit = inIter * iterp + inRest * restp
         p2 = bounded(p + s["evap"]*(deposit - p))
-        nodes[k] = (a,b,w,p2,(ch+(inIter+inRest+inBest)/3.0))
+        nodes[k] = (a,b,w,p2,(ch+1))
     return(nodes)
 
 
 def pheroProportions(s):
     # return proportions of solutions to use
-    # (iteration, restart, best)
+    # (iteration, restart)
     sc = s["c"]
     if sc > 0.8:
-        x= (1.0, 0.0, 0.0) #- just started out, use iteration best
+        x= (1.0, 0.0) #- just started out, use iteration best
     elif sc >= 0.6 and sc < 0.8:
-        x= (0.6669, 0.3331, 0.0)
+        x= (0.6669, 0.3331)
     elif sc >= 0.4 and sc < 0.6:
-        x= (0.3331, 0.6669, 0.0) # nearing the end - move to restart 
-    elif sc >= 0.2 and sc > 0.4:
-        x= (0.0, 0.6669, 0.3331)
-    elif sc >= 0.1 and sc < 0.2:
-        x= (0.0, 0.3331, 0.6669) # nearing the end - move to best ever
-    else:
-        x = (0.0,0.0,1.0)
+        x= (0.3331, 0.6669) 
+    elif sc < 0.4:
+        x= (0.0, 1.0) # nearing the end - just use restart best
     return(x)
 
 
