@@ -1,4 +1,4 @@
-
+import sys
 import numpy as np
 from copy import copy, deepcopy
 import multiprocessing as mp
@@ -179,3 +179,36 @@ def runte(filename, fileout, yl, h, n, reps, cpus):
             marker +=1
     fout.close()
 
+
+def edgelistTE(exprfile, genefile, edgefile, fileout, yl, end, reps, cpus):
+    genes  = open(genefile,'r').read().strip().split("\n")
+    dat    = open(exprfile,'r').read().strip().split("\n")
+    dats   = map(lambda x: x.split("\t"), dat)
+    edge   = open(edgefile,'r').read().strip().split("\n")
+    edges  = map(lambda x: x.split("\t"), edge)
+    edgel1 = [x[1] for x in edges]
+    edgel2 = [x[2] for x in edges]
+    fout   = open(fileout,'w')
+    marker = 0
+    flag = 1
+    for e in xrange(len(edges)):
+        try:
+            i = genes.index(edgel1[e]) # from 
+            j = genes.index(edgel2[e]) # to
+            x = map(float,dats[i][0:end])
+            y = map(float,dats[j][0:end])
+            res0 = autoPermTE(x,y,yl,1000,4)
+            res1 = autoPermTE(y,x,yl,1000,4)
+            fout.write("forward"+"\t"+str(i)+"\t"+ str(j) +"\t"+ edgel1[e] +"\t"+ edgel2[e] + "\t" + "\t".join(map(str,res0))+"\n")
+            fout.write("reverse"+"\t"+str(j)+"\t"+ str(i) +"\t"+ edgel2[e] +"\t"+ edgel1[e] + "\t" + "\t".join(map(str,res1))+"\n")
+            if marker % 17 == 0:
+                print str(marker) +"\t"+ str(i)+"\t"+ str(j) +"\t"+ edgel1[e] +"\t"+ edgel2[e] + "\t" + "\t".join(map(str,res0))
+                print str(marker) +"\t"+ str(j)+"\t"+ str(i) +"\t"+ edgel2[e] +"\t"+ edgel1[e] + "\t" + "\t".join(map(str,res1))
+        except:
+            sys.stderr.write("error at: " + str(marker) + "\t" + str(e) + "\t" + edgel1[e] + "\t" + edgel2[e] + "\n")
+        marker +=1
+    fout.close()
+
+#edgelistTE("../Max_Influence_Problem/Data/GRN/grn_expr_table.txt","../Max_Influence_Problem/Data/GRN/grn_gene_names.txt","../Max_Influence_Problem/Data/GRN/grn_yeastrac_edges.txt", "grn_weights.txt", 1, 1000, 4)
+
+#edgelistTE("../Max_Influence_Problem/Data/GRN/grn_expr_table.txt","../Max_Influence_Problem/Data/GRN/grn_gene_names.txt","../Max_Influence_Problem/Data/GRN/grn_yeastrac_edges.txt", "grn_weights_lag2_cutat28", 2, 28, 1000, 3)
