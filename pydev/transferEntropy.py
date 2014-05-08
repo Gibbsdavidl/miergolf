@@ -6,7 +6,6 @@ from numpy.random import shuffle, random, normal
 from math import log, sqrt, exp, pi
 import itertools as it
 from scipy.stats import gaussian_kde
-import matplotlib as plt
 
 # In this work, I am computing information theoretic values
 # by, first, discretizing expression values into a given
@@ -180,7 +179,7 @@ def runte(filename, fileout, yl, h, n, reps, cpus):
     fout.close()
 
 
-def edgelistTE(exprfile, genefile, edgefile, fileout, yl, end, reps, cpus):
+def edgelistTE(exprfile, genefile, edgefile, fileout, yl, start, end, reps, cpus):
     genes  = open(genefile,'r').read().strip().split("\n")
     dat    = open(exprfile,'r').read().strip().split("\n")
     dats   = map(lambda x: x.split("\t"), dat)
@@ -195,10 +194,10 @@ def edgelistTE(exprfile, genefile, edgefile, fileout, yl, end, reps, cpus):
         try:
             i = genes.index(edgel1[e]) # from 
             j = genes.index(edgel2[e]) # to
-            x = map(float,dats[i][0:end])
-            y = map(float,dats[j][0:end])
-            res0 = autoPermTE(x,y,yl,1000,4)
-            res1 = autoPermTE(y,x,yl,1000,4)
+            x = map(float,dats[i][start:end])
+            y = map(float,dats[j][start:end])
+            res0 = autoPermTE(x,y,yl,reps,cpus)
+            res1 = autoPermTE(y,x,yl,reps,cpus)
             fout.write("forward"+"\t"+str(i)+"\t"+ str(j) +"\t"+ edgel1[e] +"\t"+ edgel2[e] + "\t" + "\t".join(map(str,res0))+"\n")
             fout.write("reverse"+"\t"+str(j)+"\t"+ str(i) +"\t"+ edgel2[e] +"\t"+ edgel1[e] + "\t" + "\t".join(map(str,res1))+"\n")
             if marker % 17 == 0:
@@ -212,3 +211,5 @@ def edgelistTE(exprfile, genefile, edgefile, fileout, yl, end, reps, cpus):
 #edgelistTE("../Max_Influence_Problem/Data/GRN/grn_expr_table.txt","../Max_Influence_Problem/Data/GRN/grn_gene_names.txt","../Max_Influence_Problem/Data/GRN/grn_yeastrac_edges.txt", "grn_weights.txt", 1, 1000, 4)
 
 #edgelistTE("../Max_Influence_Problem/Data/GRN/grn_expr_table.txt","../Max_Influence_Problem/Data/GRN/grn_gene_names.txt","../Max_Influence_Problem/Data/GRN/grn_yeastrac_edges.txt", "grn_weights_lag2_cutat28", 2, 28, 1000, 3)
+
+#edgelistTE("grn_expr_table.txt","grn_gene_names.txt","grn_yeastrac_edges.txt", "grn_weights_lag2_full", 2, 41, 1000, 8)
