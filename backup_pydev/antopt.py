@@ -24,9 +24,16 @@ def optimize (pool, s, nodes, sparseMat):
             # generate the probability distribution # 
             ps = genProbs(s,nodes)
 
-            # for each new ant, generate a solution, local search, and score
-            (bestSoln,bestScore) = antWork(pool, s, np.copy(ps), sparseMat)
-
+            # for each new ant, generate a solution
+            solns = generateSolutions(pool, s, np.copy(ps))
+                            
+            # score each solution, choose the best #
+            scores = computeScores(pool, s, solns, sparseMat)
+            idx    = maxscore(scores)
+            
+            # perform local optimization ... if set in s["local"] #
+            (bestSoln,bestScore) = parLocalOpt(pool, s, ps, solns[idx], scores[idx], nodes, sparseMat) 
+             
             # update the best/resetbest/iterbests #
             s = updateSolutionSet(s, bestSoln, bestScore, iters)
 
@@ -37,7 +44,8 @@ def optimize (pool, s, nodes, sparseMat):
             s = checkConvergence(s, nodes)
             iters += 1
             s["iters"] = iters
-
+        print "    iters: " + str(iters)
+        print s
     return(s)
 
 
@@ -54,7 +62,7 @@ def resetState(s):
     s["c"] = 1.0
     return(s)
 
-
+    
 def genProbs(s,nodes):
     # generate the probablities for selecting each node
     ps = np.zeros(len(nodes))
@@ -63,27 +71,15 @@ def genProbs(s,nodes):
     return(ps)
 
 
-def antWork(pool, s, ps, sparseMat):
-    # for the solns
-    nants = s["ants"]
-    # generate the list of data for each ant
-    antdat = it.izip(xrange(nants), it.repeat(s, nants), it.repeat(ps, nants), it.repeat(sparseMat, nants))
-    # send it to a pooled fun party
-    solns = pool.map(poolParty, antdat)
-    # return teh bestest
-    return(scoreMax(solns, s))
-
-
-def poolParty( (i, s, ps, sparseMat) ):
-    # start with a possible solution
-    soln = genSoln(i,s,np.copy(ps))
-    # then do a local search
-    (soln2, score) = localSearch(s, np.copy(ps), soln, sparseMat)
-    # return the best
-    return(soln2, score)
+def generateSolutions(pool, s, ps):
+    # get ready for a parallel attack on:
+    # generate a solution, probabilistically for each ant.
+    antdat = it.izip(xrange(s["ants"]), it.repeat(s, s["ants"]), it.repeat(ps, s["ants"]))
+    solns = pool.map(genSoln, antdat)
+    return(solns)
 
     
-def genSoln(i, s, ps):
+def genSoln((i, s, ps)):
     # generate a solution, probabilistically for each ant.    
     soln = []
     r = random.Random()
@@ -97,44 +93,14 @@ def genSoln(i, s, ps):
     return(soln)
 
 
-def localSearch(s, ps, bestSoln, sparseMat):
-    (bestScore,bestTouch) = scoreSoln(bestSoln, s, sparseMat)
-    if s["local"] == -1:   # none
-        # go back! go back!
-        return (bestSoln,(bestScore,bestTouch))
-    else:
-        # hill climbing for a certain number of steps
-        r = random.Random()
-        r.jumpahead(int(1000*r.random())) # make sure each parallel thread has diff #
-        newSoln = list(bestSoln)
-        newScore = bestScore
-        newTouch = bestTouch
-        ps = ps/(sum(ps))
-        cs = ps.cumsum()
-        n = s["local"] # the number of tries to make
-        testsoln = list(newSoln)
-        for i in xrange(n):
-            remr  = random.sample(testsoln,1)[0]           # the one to remove
-            solnr = [xi for xi in testsoln if xi != remr]  # fragment list
-            solni = testsoln[0];                                    # pick a new one, not in the list already
-            while solni in testsoln:
-                solni = bisect(cs,r.random())         # the one to add, based on ps
-            testsoln = list( (solnr + [solni]) )           # the new soln list
-            score    = scoreSoln(testsoln, s, sparseMat)   # score it
-            if s["opton"] == "touch":
-                if score[1] > newTouch:
-                    newScore = score[0]          # if better: keep it
-                    newTouch = score[1]
-                    newSoln = list(testsoln)
-                else:
-                    testsoln = list(newSoln)  # else: return to previous soln                    
-            else:
-                print "Not implemented yet!"
-                sys.exit(1)
-        return (newSoln, (newScore, newTouch))
+def computeScores(pool, s, solns, sparseMat):
+    # score each solution
+    scoreDat = it.izip(solns, it.repeat( (s,sparseMat), len(solns)))
+    scores = pool.map(scoreSoln, scoreDat)
+    return(scores)
 
 
-def scoreSoln(soln, s, smat):
+def scoreSoln( (soln, (s,smat)) ):
     # soln -- the solutions set S
     # smat  -- nxn sparse matrix
     # s     -- the program state
@@ -154,7 +120,7 @@ def scoreSoln(soln, s, smat):
     elif s["mode"] == "rx":
         return(scoreRX(s,lap_t,pst_t))
     else:
-        print "ScoreSoln Error! mode must be rx, tx, or both."
+        print "Error! mode must be rx, tx, or both."
         sys.exit(1)
 
 
@@ -215,29 +181,75 @@ def subMatrix(rows, cols, A):
     return(A.tocsr()[rows,:].tocsc()[:,cols])
 
 
-def scoreMax(solns, s):
-    best = 0  # index to the best
-    idx = 0   # current index
-    for (a,(b,c)) in solns:
-        if s["opton"] == "touch":
-            if best < c:
-                best = idx
-        elif s["opton"] == "score":
-            if best < b:
-                best = idx
-        elif s["opton"] == "combo":
-            if best < combo(b,c):
-                best = idx
+def maxscore(scores):
+    best = 0
+    idx = 0
+    m = -1
+    for (a,b) in scores:
+        if a > m:
+            m = a
+            best = idx
+        idx += 1
+    return(best)
+
+    
+def parLocalOpt(pool, s, ps, bestSoln,
+                (bestScore,bestTouch),
+                nodes, sparseMat):
+    if s["local"] == -1:   # none
+        # go back! go back!
+        return (bestSoln,(bestScore,bestTouch))
+    elif s["local"] == 0:  # full local search, slow!
+         # build a list of possible solns
+        newSolnList = []
+        trySoln = []
+        for i in xrange(len(bestSoln)):
+            for ni in xrange(len(nodes)):
+                if ni not in bestSoln:
+                    trySoln = list(bestSoln)
+                    trySoln[i] = ni
+                    newSolnList.append(list(trySoln))
+        # then score each potential solution
+        scores = computeScores(pool, s, newSolnList, sparseMat)
+        idx    = maxscore(scores)
+
+        # anything better?
+        if scores[idx][0] > bestScore:
+            print " local search helped! " + str(bestScore) +"   "+ str(scores[idx][0])
+            return( (newSolnList[idx], scores[idx]) )
         else:
-            print "ScoreMax Error: opton must be score, touch, or combo"
-            sys.exit(1)
-        idx += 1 # NEXT!
-    return(solns[best])
-
-
-def combo(a,b):
-    return(a*b)
-
+            return (bestSoln,(bestScore,bestTouch))
+    else:
+        # hill climbing for a certain number of steps
+        newSoln = list(bestSoln)
+        newScore = bestScore
+        newTouch = bestTouch
+        r = random.Random()
+        r.jumpahead(int(1000*r.random())) # make sure each parallel thread has diff #s
+        ps = ps/(sum(ps)) # after removing one ... renorm the probs
+        cs = ps.cumsum()
+        n = s["local"] # the number of tries to make
+        testSoln = list(newSoln)
+        for i in xrange(n):
+            remr  = random.sample(testSoln,1)[0]           # the one to remove
+            solnr = [xi for xi in testSoln if xi != remr]  # fragment list
+            solni = -1;                                    # pick a new one, not in the list already
+            while solni not in testSoln:
+                solni = bisect(cs,random.random())         # the one to add, based on ps
+            testSoln = list( (solnr + [solni]) )           # the new soln list
+            score    = computeScores(pool, s, [testSoln], sparseMat)[0] # score it
+            if s["opton"] == "touch":
+                if score[1] > newTouch:
+                    print "   improvement:  from:" + str((bestScore,bestTouch)) + "  to: " + str(score)
+                    newScore = score[0]          # if better: keep it
+                    newTouch = score[1]
+                    newSoln = list(testSoln)
+                else:
+                    testSoln = list(newSoln)  # else: return to previous soln                    
+            else:
+                print "Not implemented yet!"
+                sys.exit(1)
+        return (newSoln, (newScore, newTouch))
 
 def updateSolutionSet(s, bestSoln, (bestScore,bestTouch), iters):
     if s["opton"] == "score":
@@ -255,14 +267,14 @@ def updateSolutionSet(s, bestSoln, (bestScore,bestTouch), iters):
         if bestTouch > s["bestIter"][1]:
             s["bestIter"] = (bestScore, bestTouch, bestSoln)
     elif s["opton"] == "combo":
-        if combo(bestTouch,bestScore) > combo(s["bestEver"][1],s["bestEver"][0]):
+        if bestTouch*bestScore > s["bestEver"][1]*s["bestEver"][0]:
             s["bestEver"] = (bestScore, bestTouch, bestSoln)
-        if combo(bestTouch,bestScore) > combo(s["bestRest"][1],s["bestRest"][0]):
+        if bestTouch*bestScore > s["bestRest"][1]*s["bestRest"][0]:
             s["bestRest"] = (bestScore, bestTouch, bestSoln)
-        if combo(bestTouch*bestScore) > combo(s["bestIter"][1],s["bestIter"][0]):
+        if bestTouch*bestScore > s["bestIter"][1]*s["bestIter"][0]:
             s["bestIter"] = (bestScore, bestTouch, bestSoln)
     else:
-        print "Update Solution Error! config option 'opton' must be score, touch, or combo"
+        print "Error! config option 'opton' must be score, touch, or combo"
         sys.exit(1)
     return(s)
 
