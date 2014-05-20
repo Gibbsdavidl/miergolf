@@ -158,7 +158,7 @@ def scoreSoln(soln, s, smat):
         sys.exit(1)
 
 
-def scoreBoth(s,lap,pts,lap_t,pst_t):
+def XcoreBoth(s,lap,pts,lap_t,pst_t):
     f = lin.spsolve(lap, pts) 
     h = lin.spsolve(lap_t, pst_t)
     if type(f) == type(np.array([])): # came back as an array
@@ -187,7 +187,7 @@ def scoreBoth(s,lap,pts,lap_t,pst_t):
     return((score, touch))
 
 
-def XscoreBoth(s,lap,pts,lap_t,pst_t):
+def scoreBoth(s,lap,pts,lap_t,pst_t):
     f = lin.spsolve(lap, pts) 
     h = lin.spsolve(lap_t, pst_t)
     if type(f) == type(np.array([])): # came back as an array
