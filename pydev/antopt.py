@@ -4,7 +4,7 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as lin
 import numpy as np
 from bisect import bisect
-import random
+from random import random, sample, jumpahead
 import itertools as it
 
 # Hypercube MinMax Ant Optimization #
@@ -86,12 +86,11 @@ def poolParty( (i, s, ps, sparseMat) ):
 def genSoln(i, s, ps):
     # generate a solution, probabilistically for each ant.    
     soln = []
-    r = random.Random()
-    r.jumpahead(int(1000*r.random())) # make sure each parallel thread has diff #s
+    jumpahead(int(1000*random())) # make sure each parallel thread has diff #s
     for ki in xrange(int(s["k"])):
         ps = ps/(sum(ps)) # after removing one ... renorm the probs
         cs = ps.cumsum()
-        solni = bisect(cs,r.random()) # should skip over the 0'ed ones...
+        solni = bisect(cs,random()) # should skip over the 0'ed ones...
         soln.append(solni)
         ps[solni] = 0
     return(soln)
@@ -104,8 +103,7 @@ def localSearch(s, ps, bestSoln, sparseMat):
         return (bestSoln,(bestScore,bestTouch))
     else:
         # hill climbing for a certain number of steps
-        r = random.Random()
-        r.jumpahead(int(1000*r.random())) # make sure each parallel thread has diff #
+        jumpahead(int(1000*random())) # make sure each parallel thread has diff #
         newSoln = list(bestSoln)
         newScore = bestScore
         newTouch = bestTouch
@@ -114,11 +112,11 @@ def localSearch(s, ps, bestSoln, sparseMat):
         n = s["local"] # the number of tries to make
         testsoln = list(newSoln)
         for i in xrange(n):
-            remr  = random.sample(testsoln,1)[0]           # the one to remove
+            remr  = sample(testsoln,1)[0]           # the one to remove
             solnr = [xi for xi in testsoln if xi != remr]  # fragment list
             solni = testsoln[0];                                    # pick a new one, not in the list already
             while solni in testsoln:
-                solni = bisect(cs,r.random())         # the one to add, based on ps
+                solni = bisect(cs,random())         # the one to add, based on ps
             testsoln = list( (solnr + [solni]) )           # the new soln list
             score    = scoreSoln(testsoln, s, sparseMat)   # score it
             if s["opton"] == "touch":
