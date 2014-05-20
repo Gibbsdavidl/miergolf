@@ -162,8 +162,30 @@ def scoreBoth(s,lap,pts,lap_t,pst_t):
     f = lin.spsolve(lap, pts) 
     h = lin.spsolve(lap_t, pst_t)
     if type(f) == type(np.array([])): # came back as an array
+        print "single array f, h"
+        score = f.sum() + h.sum()
+        touch = sum(h > s["tx"]) + sum(f > s["rx"])
+    else: # came back as a sparse matrix
+        fSsum = np.array(f.sum(0)).flatten()
+        hSsum = np.array(h.sum(0)).flatten()
+        fTsum = np.array(f.sum(1)).flatten()
+        hTsum = np.array(h.sum(1)).flatten()
+        score = fSsum.sum()+fTsum.sum()+hSsum.sum()+hTsum.sum()
+        touch = (sum(fSsum > s["rx"]) + 
+                 sum(fTsum > s["rx"]) +
+                 sum(hSsum > s["tx"]) +
+                 sum(hTsum > s["tx"]))
+        #  best score; best touch #
+    return((score, touch))
+
+
+def XscoreBoth(s,lap,pts,lap_t,pst_t):
+    f = lin.spsolve(lap, pts) 
+    h = lin.spsolve(lap_t, pst_t)
+    if type(f) == type(np.array([])): # came back as an array
         fh = f+h
-        touch = sum(fh > s["tx"])
+        score = fh.sum()
+        touch = (fh > s["tx"]).sum()
     else: # came back as a sparse matrix
         fsum = np.array(f.sum(1)).flatten()
         hsum = np.array(h.sum(1)).flatten()
@@ -171,6 +193,7 @@ def scoreBoth(s,lap,pts,lap_t,pst_t):
         touch = sum(fh > s["tx"])
         #  best score; best touch #
     return((fh.sum(), touch))
+
 
 
 def scoreRX(s,lap,pts):
