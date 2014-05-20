@@ -4,7 +4,6 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as lin
 import numpy as np
 from bisect import bisect
-from random import random, sample, jumpahead
 import itertools as it
 
 # Hypercube MinMax Ant Optimization #
@@ -13,7 +12,7 @@ def optimize (pool, s, nodes, sparseMat):
     # for each new convergence #
     for run in xrange(s["runs"]):
         print "RUN: " + str(run) 
-
+        
         # prepare for this reset-run #
         nodes = resetNodes(nodes)
         s     = resetState(s)
@@ -66,16 +65,18 @@ def genProbs(s,nodes):
 def antWork(pool, s, ps, sparseMat):
     # for the solns
     nants = s["ants"]
+    seeds = [np.random.randint(1000000) for i in xrange(nants)] # seed each thread
     # generate the list of data for each ant
-    antdat = it.izip(xrange(nants), it.repeat(s, nants), it.repeat(ps, nants), it.repeat(sparseMat, nants))
+    antdat = it.izip(xrange(nants), it.repeat(s, nants), it.repeat(ps, nants), it.repeat(sparseMat, nants), seeds)
     # send it to a pooled fun party
     solns = pool.map(poolParty, antdat)
     # return teh bestest
     return(scoreMax(solns, s))
 
 
-def poolParty( (i, s, ps, sparseMat) ):
+def poolParty( (i, s, ps, sparseMat, seedi) ):
     # start with a possible solution
+    np.random.seed(seedi)
     soln = genSoln(i,s,np.copy(ps))
     # then do a local search
     (soln2, score) = localSearch(s, np.copy(ps), soln, sparseMat)
@@ -86,11 +87,10 @@ def poolParty( (i, s, ps, sparseMat) ):
 def genSoln(i, s, ps):
     # generate a solution, probabilistically for each ant.    
     soln = []
-    jumpahead(int(1000*random())) # make sure each parallel thread has diff #s
     for ki in xrange(int(s["k"])):
         ps = ps/(sum(ps)) # after removing one ... renorm the probs
         cs = ps.cumsum()
-        solni = bisect(cs,random()) # should skip over the 0'ed ones...
+        solni = bisect(cs,np.random.random()) # should skip over the 0'ed ones...
         soln.append(solni)
         ps[solni] = 0
     return(soln)
@@ -103,7 +103,6 @@ def localSearch(s, ps, bestSoln, sparseMat):
         return (bestSoln,(bestScore,bestTouch))
     else:
         # hill climbing for a certain number of steps
-        jumpahead(int(1000*random())) # make sure each parallel thread has diff #
         newSoln = list(bestSoln)
         newScore = bestScore
         newTouch = bestTouch
@@ -112,11 +111,11 @@ def localSearch(s, ps, bestSoln, sparseMat):
         n = s["local"] # the number of tries to make
         testsoln = list(newSoln)
         for i in xrange(n):
-            remr  = sample(testsoln,1)[0]           # the one to remove
+            remr  = np.random.choice(testsoln,1)[0]           # the one to remove
             solnr = [xi for xi in testsoln if xi != remr]  # fragment list
             solni = testsoln[0];                                    # pick a new one, not in the list already
             while solni in testsoln:
-                solni = bisect(cs,random())         # the one to add, based on ps
+                solni = bisect(cs,np.random.random())         # the one to add, based on ps
             testsoln = list( (solnr + [solni]) )           # the new soln list
             score    = scoreSoln(testsoln, s, sparseMat)   # score it
             if s["opton"] == "touch":

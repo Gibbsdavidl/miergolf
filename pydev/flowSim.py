@@ -73,9 +73,9 @@ def main():
     # then search for the solution.
     (score,soln,rxed,txed) = search(nodes, state, counts, txhist)
 
-    if args[7] == "--fullrun":
+    if args[7] == "fullrun":
         # process arguments
-        print "\nRunning optimization.."
+        sys.stderr.write("\nRunning optimization..\n")
         s = initProgramState (args)
         cpus = s["cpus"]
         pool = mp.Pool(cpus)
@@ -83,41 +83,28 @@ def main():
         s2 = optimize (pool, s, nodes, sparseMat)
         pool.close()
 
+        print ("Config\tGraph\tType\tOptimTo\tMode\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln")
+        print ( str(s["config"]) +"\t"+
+                str(s["graphfile"]) +"\t"+
+                str(s["lineGraph"]) +"\t"+
+                str(s["opton"]) +"\t"+
+                str(s["mode"]) +"\t"+
+                str(s["ants"]) + "\t"+
+                str(s["tx"]) +"\t"+
+                str(s["rx"]) +"\t"+
+                str(s["damp"]) +"\t"+
+                str(s["local"]) +"\t"+
+                str(score) +"\t"+
+                str(soln) +"\t"+
+                str(s["bestEver"][1]) +"\t"+
+                str(s["bestEver"][2]) + "\t")
 
-    print ("Config\tGraph\tType\tOptimTo\tMode\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln")
-    print ( str(s["config"]) +"\t"+
-            str(s["graphfile"]) +"\t"+
-            str(s["lineGraph"]) +"\t"+
-            str(s["opton"]) +"\t"+
-            str(s["mode"]) +"\t"+
-            str(s["ants"]) + "\t"+
-            str(s["tx"]) +"\t"+
-            str(s["rx"]) +"\t"+
-            str(s["damp"]) +"\t"+
-            str(s["local"]) +"\t"+
-            str(score) +"\t"+
-            str(soln) +"\t"+
-            str(s["bestEver"][1]) +"\t"+
-            str(s["bestEver"][2]) + "\t")
-
-
-def printResults(s,nodes):
-    print "Graph Type: " + str(s["lineGraph"])
-    print "OptimizeTo: " + str(s["opton"])
-    print "Mode:       " + str(s["mode"])
-    print "Tx: " + str(s["tx"]) +"  Rx: "+str(s["rx"])
-    print "Dampening:  " + str(s["damp"])
-    print "Ants:       " + str(s["ants"])
-    print "Local Opt : " + str(s["local"])
-    print "Iterations: " + str(s["iters"])
-    print "config file " + str(s["config"])
-    print "graph file: " + str(s["graphfile"]) 
-    print "Solution  : " + str(s["bestEver"])
-    print "Selected Edges: "
-    for (i,k) in nodes.items():
-        if i in s["bestEver"][2] or k[3] > 0.7:
-            print str(i) +"   " + str(k)
-            
+    else:
+        print "Done:"
+        print score
+        print soln
+        print rxed
+        print txed
 
 
 
@@ -131,7 +118,7 @@ def printLineGraph(state, nodes, sparseMat):
             if p > 0.0:
                 fout.write(str(i) +"\t" + str(j) +"\t" + str(p) +"\n") 
     fout.close()
-    print("Printed line graph.")
+    sys.stderr.write("Printed line graph.\n")
 
 
     
@@ -143,14 +130,14 @@ def randomGraph(ns, es, deg, state):
     gedgesOrdered = g1.get_edgelist()
     gedges = []
     for ge in gedgesOrdered:  # give the edges a random direction
-        if random() > 0.5:
+        if np.random.random() > 0.5:
             gedges.append( (ge[1],ge[0]) )
         else:
             gedges.append(ge)
     nodenames = set()
     for (e1,e2) in gedges: nodenames.add(e1); nodenames.add(e2);
     nodenames = list(nodenames)
-    wts = [random() for i in xrange(len(gedges))]
+    wts = [np.random.random() for i in xrange(len(gedges))]
     fout = open(state["graphfile"],'w')
     for i in xrange(len(gedges)):
         fout.write(str(gedges[i][0]) +"\t"+ str(gedges[i][1]) +"\t"+ str(wts[i]) +"\n")
@@ -160,7 +147,7 @@ def randomGraph(ns, es, deg, state):
 
 def partitionGraph(nodes, state):
     n = len(nodes)
-    s = sample(range(0,n), int(state["k"]))
+    s = np.random.choice(range(0,n), int(state["k"]))
     t = [i for i in range(0,n) if i not in s]
     return(s,t)
 
@@ -186,7 +173,7 @@ def flowtron(state, sparseMat, nodes, nodenames, disp, steps):
     nodestore   = initNodeList(n) # holds the infoblocks
     nodehistory = initNodeList(n) # holds the list of where info came from
     dustbin = []                  # the dust bin of history, where info-blocks go to retire
-    print("Running simulation for " +str(steps)+ " timesteps.")
+    sys.stderr.write("Running simulation for " +str(steps)+ " timesteps.\n")
 
     # first produce new information and determine transitions #
     for step in xrange(steps):
@@ -194,11 +181,11 @@ def flowtron(state, sparseMat, nodes, nodenames, disp, steps):
         for ni in xrange(n):                              # for each node
             nodestore[ni].append(newInfoBlock(ni, step))      # generate new information
             ps = sparseMat.getrow(ni).toarray().flatten()     # the transition probs
-            ri = random()    
+            ri = np.random.random()    
             if all(ps == 0) or (ri < disp):                   # dissipate
                 movement[ni] = -1
             else:                                             # or transfer the block
-                psi = random()
+                psi = np.random.random()
                 tps = np.where(ps > 0)                           # possible transitions, small vec
                 cps = ps.cumsum()[ps > 0]                        # the cumulative probabilities
                 nj = tps[0][(cps >= psi).argmax()]               # where we're going
@@ -207,7 +194,7 @@ def flowtron(state, sparseMat, nodes, nodenames, disp, steps):
         # then do a syncronous info-block move or dissipation. #
         for ni in xrange(n):
             nj = movement[ni]                # the move destination
-            ib = sample(nodestore[ni],1)[0]  # we just generated one, so there has to be at least 1!
+            ib = np.random.choice(nodestore[ni],1)[0]  # we just generated one, so there has to be at least 1!
             if nj == -1:                     # dissipate a random block, put it in the dustbin
                 nodestore[ni].remove(ib)
                 dustbin.append(ib)               # throw it in the dustbin  
@@ -222,7 +209,7 @@ def flowtron(state, sparseMat, nodes, nodenames, disp, steps):
 
     
 def processSim(nhist, nstore):
-    print "Processing Simulation..."
+    sys.stderr.write("Processing Simulation...\n")
     n = len(nhist)
     storG = np.zeros(n)  # the amt of info generated by self
     storR = np.zeros(n)  # the amt of into received by others
@@ -298,7 +285,6 @@ if __name__ == "__main__":
     import getopt
     import multiprocessing as mp
     from igraph import Graph
-    from random import random, sample
     import numpy as np
     import itertools as it
     from programState import *
