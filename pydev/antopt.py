@@ -168,13 +168,21 @@ def scoreBoth(s,lap,pts,lap_t,pst_t):
     else: # came back as a sparse matrix
         fSsum = np.array(f.sum(0)).flatten()
         hSsum = np.array(h.sum(0)).flatten()
+        scover = fSsum + hSsum
+
         fTsum = np.array(f.sum(1)).flatten()
         hTsum = np.array(h.sum(1)).flatten()
-        score = fSsum.sum()+fTsum.sum()+hSsum.sum()+hTsum.sum()
-        touch = (sum(fSsum > s["rx"]) + 
-                 sum(fTsum > s["rx"]) +
-                 sum(hSsum > s["tx"]) +
-                 sum(hTsum > s["tx"]))
+        tcover = fTsum + hTsum
+
+        #score = fSsum.sum()+fTsum.sum()+hSsum.sum()+hTsum.sum()
+        score = scover.sum() + tcover.sum()
+        
+        #touch = (sum(fSsum > s["rx"]) + 
+        #         sum(fTsum > s["rx"]) +
+        #         sum(hSsum > s["tx"]) +
+        #         sum(hTsum > s["tx"]))
+        touch = sum(scover > s["rx"]) + sum(tcover > s["rx"])
+
         #  best score; best touch #
     return((score, touch))
 
