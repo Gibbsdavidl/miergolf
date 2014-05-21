@@ -32,6 +32,18 @@ def initProgramState (args):
     return(programState)
 
 
+def initSimState (args, s):
+    configText  = open(args[0], 'r').read().split("\n")
+    programArgs = filter (lambda zed: zed is not None , map(lambda x: parser(x), configText)) 
+    s["nodes"] = int(programArgs[16])
+    s["edges"] = int(programArgs[17])
+    s["degpow"] = int(programArgs[18]) # the degree power of the power law graph
+    s["timesteps"] = int(programArgs[19])
+    s["disp"] = float(programArgs[20])
+    s["full"] = programArgs[21]  # should be fullrun, which does ants, or anything else, and just the sim is done
+    return(s)
+
+
 def parser(x):
     a = x.strip()
     b = a.split(':')

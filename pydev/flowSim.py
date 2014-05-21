@@ -3,7 +3,7 @@
 ''' 
 Run this like:
 ipython flowSim.py config.txt graphfile.txt 100 100 6 
-where we specify the:
+where we specify (in the config file):
 
    config file name, 
    the graph file name,
@@ -12,7 +12,7 @@ where we specify the:
    the power law degree,
    timesteps
    dissipation rate (in decimal)
-   --fullrun  or --notfullrun
+   fullrun
 
 1.) The graph is randomly generated, with random edge weights, and written as a file
 2.) The graph is transformed to a line graph, and that's written to a file
@@ -48,19 +48,18 @@ def main():
             sys.exit(0)
 
     # process arguments
-    state = initProgramState (args)
+    state = initProgramState(args)
+    state = initSimState(args,state)
 
     # generate a random graph .... 
-    nodenames = randomGraph(int(args[2]), int(args[3]), int(args[4]), state)
+    nodenames = randomGraph(state)
 
     # convert to the linegraph and print it out for viz
     (nodes, sparseMat) = buildGraph (state)
     printLineGraph(state, nodes, sparseMat)
     
     # run the explicit flow
-    timesteps = int(args[5])
-    dissipation = float(args[6])
-    (rxhist,nstore,nbin) = flowtron(state, sparseMat, nodes, nodenames, dissipation, timesteps)
+    (rxhist,nstore,nbin) = flowtron(state, sparseMat, nodes, nodenames)
 
     # some statistics on the flow
     counts = processSim(rxhist, nstore)
@@ -73,16 +72,14 @@ def main():
     # then search for the solution.
     (score,soln,rxed,txed) = search(nodes, state, counts, rxhist)
 
-    printRXTXTables(timesteps, soln, rxhist, txhist)
+    printRXTXTables(state["timesteps"], soln, rxhist, txhist)
 
-    if args[7] == "fullrun":
+    if state["full"] == "fullrun":
         # process arguments
         sys.stderr.write("\nRunning optimization..\n")
-        s = initProgramState (args)
-        cpus = s["cpus"]
+        cpus = state["cpus"]
         pool = mp.Pool(cpus)
-        (nodes, sparseMat) = buildGraph (s)
-        s2 = optimize (pool, s, nodes, sparseMat)
+        s2 = optimize (pool, state, nodes, sparseMat)
         pool.close()
 
         print ("Config\tGraph\tType\tOptimTo\tMode\tSteps\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln")
@@ -91,7 +88,7 @@ def main():
                 str(s["lineGraph"]) +"\t"+
                 str(s["opton"]) +"\t"+
                 str(s["mode"]) +"\t"+
-                str(steps) + "\t"+
+                str(s["timesteps"]) + "\t"+
                 str(s["ants"]) + "\t"+
                 str(s["tx"]) +"\t"+
                 str(s["rx"]) +"\t"+
@@ -100,11 +97,9 @@ def main():
                 str(score) +"\t"+
                 str(soln) +"\t"+
                 str(s["bestEver"][1]) +"\t"+
-                str(s["bestEver"][2]) + "\t")
-
+                str(s["bestEver"][2]) + "\t" )
     else:
         print "Done:"
-        printResults(nodes, counts)
         print score
         print soln
         print rxed
@@ -126,10 +121,13 @@ def printLineGraph(state, nodes, sparseMat):
 
 
     
-def randomGraph(ns, es, deg, state):
+def randomGraph(state):
     # this function is going to generate a graph, and write it
     # to a file, as specified in the config file.
     # ns: number of nodes, es: number of edges, deg: power law degree, s: state 
+    ns = state["nodes"]
+    es = state["edges"]
+    deg = state["degpow"]
     g1 = Graph.Static_Power_Law(ns,es,deg)
     gedgesOrdered = g1.get_edgelist()
     gedges = []
@@ -182,7 +180,9 @@ def flowstatus(liner,step):
     return(liner)
 
 
-def flowtron(state, sparseMat, nodes, nodenames, disp, steps):    
+def flowtron(state, sparseMat, nodes, nodenames):    
+    disp = state["disp"]
+    steps = state["timesteps"]
     n = len(nodes)                # number of nodes in the line graph
     nodestore   = initNodeList(n) # holds the infoblocks
     nodehistory = initNodeList(n) # holds the list of where info came from
@@ -262,8 +262,10 @@ def search(nodes, state, counts, rxhist):
     idx = range(0,n)
     bestScore = 0; bestSoln = []; bestList = [];
     rxed = []; txed = []
-    flag = 1
+    step = 1
+    liner = 80
     for tup in it.combinations(idx, int(state["k"])):  # for each combination of k nodes
+        liner = flowstatus(liner,step)
         subscore = []; tx = []; rx = [];               #    gather all nodes that we TXed to, or RXed from 
         for t in tup:
             if state["mode"] == "tx":
@@ -287,6 +289,8 @@ def search(nodes, state, counts, rxhist):
             print "score tie:"
             print tup
             print score
+        step+=1
+    sys.stderr.write("\n")
     return( (bestScore, bestSoln, rxed, txed) )
 
 
