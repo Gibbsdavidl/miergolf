@@ -24,7 +24,7 @@ def optimize (pool, s, nodes, sparseMat):
             ps = genProbs(s,nodes)
 
             # for each new ant, generate a solution, local search, and score
-            (bestSoln,bestScore) = antWork(pool, s, np.copy(ps), sparseMat)
+            (bestSoln,bestScore) = antWork(pool, s, np.copy(ps), sparseMat, nodes)
 
             # update the best/resetbest/iterbests #
             s = updateSolutionSet(s, bestSoln, bestScore, iters)
@@ -62,24 +62,25 @@ def genProbs(s,nodes):
     return(ps)
 
 
-def antWork(pool, s, ps, sparseMat):
+def antWork(pool, s, ps, sparseMat, nodes):
     # for the solns
     nants = s["ants"]
     seeds = [np.random.randint(1000000) for i in xrange(nants)] # seed each thread
     # generate the list of data for each ant
-    antdat = it.izip(xrange(nants), it.repeat(s, nants), it.repeat(ps, nants), it.repeat(sparseMat, nants), seeds)
+    antdat = (it.izip(xrange(nants), it.repeat(s, nants), it.repeat(ps, nants), 
+                     it.repeat(sparseMat, nants), seeds, it.repeat(nodes, nants)))
     # send it to a pooled fun party
     solns = pool.map(poolParty, antdat)
     # return teh bestest
     return(scoreMax(solns, s))
 
 
-def poolParty( (i, s, ps, sparseMat, seedi) ):
+def poolParty( (i, s, ps, sparseMat, seedi, nodes) ):
     # start with a possible solution
     np.random.seed(seedi)
     soln = genSoln(i,s,np.copy(ps))
     # then do a local search
-    (soln2, score) = localSearch(s, np.copy(ps), soln, sparseMat)
+    (soln2, score) = localSearch(s, np.copy(ps), soln, sparseMat, nodes)
     # return the best
     return(soln2, score)
 
@@ -96,8 +97,8 @@ def genSoln(i, s, ps):
     return(soln)
 
 
-def localSearch(s, ps, bestSoln, sparseMat):
-    (bestScore,bestTouch) = scoreSoln(bestSoln, s, sparseMat)
+def localSearch(s, ps, bestSoln, sparseMat, nodes):
+    (bestScore,bestTouch) = scoreSoln(bestSoln, s, sparseMat, nodes)
     if s["local"] == -1:   # none
         # go back! go back!
         return (bestSoln,(bestScore,bestTouch))
@@ -111,13 +112,13 @@ def localSearch(s, ps, bestSoln, sparseMat):
         n = s["local"] # the number of tries to make
         testsoln = list(newSoln)
         for i in xrange(n):
-            remr  = np.random.choice(testsoln,1)[0]           # the one to remove
+            remr  = np.random.choice(testsoln,1)[0]        # the one to remove
             solnr = [xi for xi in testsoln if xi != remr]  # fragment list
             solni = testsoln[0];                                    # pick a new one, not in the list already
             while solni in testsoln:
                 solni = bisect(cs,np.random.random())         # the one to add, based on ps
             testsoln = list( (solnr + [solni]) )           # the new soln list
-            score    = scoreSoln(testsoln, s, sparseMat)   # score it
+            score    = scoreSoln(testsoln, s, sparseMat, nodes)   # score it
             if s["opton"] == "touch":
                 if score[1] > newTouch:
                     newScore = score[0]          # if better: keep it
@@ -131,10 +132,18 @@ def localSearch(s, ps, bestSoln, sparseMat):
         return (newSoln, (newScore, newTouch))
 
 
-def scoreSoln(soln, s, smat):
+def weightsum(nodes,tup):
+    totwt = 0.0
+    for ti in tup:
+        totwt += nodes[ti][2]
+    return(totwt)
+
+
+def scoreSoln(soln, s, smat, nodes):
     # soln -- the solutions set S
     # smat  -- nxn sparse matrix
     # s     -- the program state
+    wt = weightsum(nodes,soln)
     n = (smat.shape[0])
     ts = [i for i in xrange(n) if i not in soln] # set T
     idn = sp.eye(len(ts),len(ts))
@@ -145,46 +154,17 @@ def scoreSoln(soln, s, smat):
     pst_t = sp.csc_matrix(pst.transpose())
     lap_t = sp.csc_matrix(lap.transpose())    
     if s["mode"] == "both":
-        return(scoreBoth(s,lap,pts,lap_t,pst_t))
+        return(scoreBoth(s,lap,pts,lap_t,pst_t,wt))
     elif s["mode"] == "tx":
-        return(scoreTX(s,lap,pts))
+        return(scoreTX(s,lap,pts,wt))
     elif s["mode"] == "rx":
-        return(scoreRX(s,lap_t,pst_t))
+        return(scoreRX(s,lap_t,pst_t,wt))
     else:
         print "ScoreSoln Error! mode must be rx, tx, or both."
         sys.exit(1)
 
 
-def XcoreBoth(s,lap,pts,lap_t,pst_t):
-    f = lin.spsolve(lap, pts) 
-    h = lin.spsolve(lap_t, pst_t)
-    if type(f) == type(np.array([])): # came back as an array
-        print "single array f, h"
-        score = f.sum() + h.sum()
-        touch = sum(h > s["tx"]) + sum(f > s["rx"])
-    else: # came back as a sparse matrix
-        fSsum = np.array(f.sum(0)).flatten()
-        hSsum = np.array(h.sum(0)).flatten()
-        scover = fSsum + hSsum
-
-        fTsum = np.array(f.sum(1)).flatten()
-        hTsum = np.array(h.sum(1)).flatten()
-        tcover = fTsum + hTsum
-
-        #score = fSsum.sum()+fTsum.sum()+hSsum.sum()+hTsum.sum()
-        score = scover.sum() + tcover.sum()
-        
-        #touch = (sum(fSsum > s["rx"]) + 
-        #         sum(fTsum > s["rx"]) +
-        #         sum(hSsum > s["tx"]) +
-        #         sum(hTsum > s["tx"]))
-        touch = sum(scover > s["rx"]) + sum(tcover > s["rx"])
-
-        #  best score; best touch #
-    return((score, touch))
-
-
-def scoreBoth(s,lap,pts,lap_t,pst_t):
+def scoreBoth(s,lap,pts,lap_t,pst_t,wt):
     f = lin.spsolve(lap, pts) 
     h = lin.spsolve(lap_t, pst_t)
     if type(f) == type(np.array([])): # came back as an array
@@ -195,13 +175,13 @@ def scoreBoth(s,lap,pts,lap_t,pst_t):
         fsum = np.array(f.sum(1)).flatten()
         hsum = np.array(h.sum(1)).flatten()
         fh = fsum + hsum
-        touch = sum(fh > s["tx"])
+        touch = sum(fh > s["tx"]) + wt
         #  best score; best touch #
     return((fh.sum(), touch))
 
 
 
-def scoreRX(s,lap,pts):
+def scoreRX(s,lap,pts,wt):
     f = lin.spsolve(lap, pts) 
     if type(f) == type(np.array([])): # came back as an array
         ftouch = sum(f > s["rx"])
@@ -211,7 +191,7 @@ def scoreRX(s,lap,pts):
     return((fsum.sum(), ftouch))
 
 
-def scoreTX(s, lap_t, pst_t):
+def scoreTX(s, lap_t, pst_t, wt):
     h = lin.spsolve(lap_t, pst_t)
     if type(h) == type(np.array([])): # came back as an array
         htouch = sum(h > s["tx"])
@@ -221,15 +201,15 @@ def scoreTX(s, lap_t, pst_t):
     return((hsum.sum(), htouch))
 
 
-def scoreMats(solns, s, smat):
+def scoreMats(soln, s, smat):
     # ss    -- the solutions set S
     # smat  -- nxn sparse matrix
     # ts    -- the set T
-    n = (smat.shape[0]-1)
-    ts = [i for i in xrange(n) if i not in solns]
+    n = (smat.shape[0])
+    ts = [i for i in xrange(n) if i not in soln]
     idn = sp.eye(len(ts))
-    pst = subMatrix(solns, ts, smat)
-    pts = subMatrix(ts, solns, smat)
+    pst = subMatrix(soln, ts, smat)
+    pts = subMatrix(ts, soln, smat)
     ptt = subMatrix(ts, ts, smat)
     lap = sp.csc_matrix(idn-ptt)
     pst_t = sp.csc_matrix(pst.transpose())
@@ -240,7 +220,10 @@ def scoreMats(solns, s, smat):
 
 
 def subMatrix(rows, cols, A):
-    return(A.tocsr()[rows,:].tocsc()[:,cols])
+    a1 = A.tocsc()[:,cols]
+    a2 = a1.tocsr()[rows,:]
+    return(a2)
+    #return(A.tocsr()[rows,:].tocsc()[:,cols])
 
 
 def scoreMax(solns, s):

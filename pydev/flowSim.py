@@ -60,18 +60,20 @@ def main():
     # run the explicit flow
     timesteps = int(args[5])
     dissipation = float(args[6])
-    (txhist,nstore,nbin) = flowtron(state, sparseMat, nodes, nodenames, dissipation, timesteps)
+    (rxhist,nstore,nbin) = flowtron(state, sparseMat, nodes, nodenames, dissipation, timesteps)
 
     # some statistics on the flow
-    counts = processSim(txhist, nstore)
-    rxhist = counts[6]
+    counts = processSim(rxhist, nstore)
+    txhist = counts[6]
     
     # output results ... did we find the solution? OR how much of it?
     # we should plot out graphs, and such.
     printResults(nodes, counts)
 
     # then search for the solution.
-    (score,soln,rxed,txed) = search(nodes, state, counts, txhist)
+    (score,soln,rxed,txed) = search(nodes, state, counts, rxhist)
+
+    printRXTXTables(timesteps, soln, rxhist, txhist)
 
     if args[7] == "fullrun":
         # process arguments
@@ -83,12 +85,13 @@ def main():
         s2 = optimize (pool, s, nodes, sparseMat)
         pool.close()
 
-        print ("Config\tGraph\tType\tOptimTo\tMode\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln")
+        print ("Config\tGraph\tType\tOptimTo\tMode\tSteps\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln")
         print ( str(s["config"]) +"\t"+
                 str(s["graphfile"]) +"\t"+
                 str(s["lineGraph"]) +"\t"+
                 str(s["opton"]) +"\t"+
                 str(s["mode"]) +"\t"+
+                str(steps) + "\t"+
                 str(s["ants"]) + "\t"+
                 str(s["tx"]) +"\t"+
                 str(s["rx"]) +"\t"+
@@ -101,6 +104,7 @@ def main():
 
     else:
         print "Done:"
+        printResults(nodes, counts)
         print score
         print soln
         print rxed
@@ -168,15 +172,26 @@ def initNodeList(n):
     return(d)
 
 
+def flowstatus(liner,step):
+    if step % 97 == 0:
+        sys.stderr.write(".")
+        if liner < 0:
+            sys.stderr.write("\n")
+            liner = 80
+        liner -= 1
+    return(liner)
+
+
 def flowtron(state, sparseMat, nodes, nodenames, disp, steps):    
     n = len(nodes)                # number of nodes in the line graph
     nodestore   = initNodeList(n) # holds the infoblocks
     nodehistory = initNodeList(n) # holds the list of where info came from
     dustbin = []                  # the dust bin of history, where info-blocks go to retire
     sys.stderr.write("Running simulation for " +str(steps)+ " timesteps.\n")
-
+    liner = 80
     # first produce new information and determine transitions #
     for step in xrange(steps):
+        liner = flowstatus(liner,step)
         movement = [0 for i in xrange(n)]                 # record where each node will transfer to..
         for ni in xrange(n):                              # for each node
             nodestore[ni].append(newInfoBlock(ni, step))      # generate new information
@@ -193,9 +208,9 @@ def flowtron(state, sparseMat, nodes, nodenames, disp, steps):
 
         # then do a syncronous info-block move or dissipation. #
         for ni in xrange(n):
-            nj = movement[ni]                # the move destination
+            nj = movement[ni]                          # the move destination
             ib = np.random.choice(nodestore[ni],1)[0]  # we just generated one, so there has to be at least 1!
-            if nj == -1:                     # dissipate a random block, put it in the dustbin
+            if nj == -1:                               # dissipate a random block, put it in the dustbin
                 nodestore[ni].remove(ib)
                 dustbin.append(ib)               # throw it in the dustbin  
             else:
@@ -203,8 +218,8 @@ def flowtron(state, sparseMat, nodes, nodenames, disp, steps):
                 nodehistory[nj].append(ib["source"])  # node nj has received a block with source ib["source"]
                 nodestore[ni].remove(ib)
                 nodestore[nj].append(ib)
-
-    return((nodehistory, nodestore, dustbin))
+    sys.stderr.write("\n")
+    return((nodehistory, nodestore, dustbin)) # nodehistory is rxhist
 
 
     
@@ -217,7 +232,7 @@ def processSim(nhist, nstore):
     uniqR = np.zeros(n)  # the amt of unique received info
     uniqT = np.zeros(n)  # the unique number of nodes sent to
     totalT = np.zeros(n) # total amt sent out
-    rxhist = []          # where the info *ultimately* ended up
+    txhist = []          # where the info *ultimately* ended up
     for ni in xrange(n):
         storG[ni] = sum(map(lambda y: y == ni, map(lambda x: x["source"],nstore[ni])))
         storR[ni] = sum(map(lambda y: y != ni, map(lambda x: x["source"],nstore[ni])))
@@ -232,32 +247,22 @@ def processSim(nhist, nstore):
                 y += yi
         uniqT[ni] = x
         totalT[ni] = y
-        rxhist.append(l)
-    return( (storG, storR, totalR, uniqR, uniqT, totalT, rxhist) )
+        txhist.append(l)
+    return( (storG, storR, totalR, uniqR, uniqT, totalT, txhist) )
             
-
-def printResults(nodes, (storG, storR, totalR, uniqR, uniqT, totalT, rxhist)):
-    fout = open("simResultsTable.txt",'w')
-    n = len(nodes)
-    fout.write("From\tTo\tWt\tStoreGen\tStoreRx\ttotalRX\tuniqRX\ttotalTX\tuniqTX\n")
-    for ni in xrange(n):
-        line = (nodes[ni][0] +"\t"+ nodes[ni][1] +"\t"+ str(round(nodes[ni][2],3)) +"\t"+
-                str(storG[ni]) +"\t"+ str(storR[ni]) +"\t"+
-                str(totalR[ni]) +"\t"+ str(uniqR[ni]) +"\t"+
-                str(totalT[ni]) +"\t"+ str(uniqT[ni]) +"\n")
-        fout.write(line)
-
 
 def nuniq(x):
     return(len(set(x)))
         
 
-def search(nodes, state, counts, txhist):
-    rxhist = counts[6]
+def search(nodes, state, counts, rxhist):
+    sys.stderr.write("Searching Solutions...\n")
+    txhist = counts[6]
     n = len(nodes)
     idx = range(0,n)
     bestScore = 0; bestSoln = []; bestList = [];
     rxed = []; txed = []
+    flag = 1
     for tup in it.combinations(idx, int(state["k"])):  # for each combination of k nodes
         subscore = []; tx = []; rx = [];               #    gather all nodes that we TXed to, or RXed from 
         for t in tup:
@@ -271,13 +276,86 @@ def search(nodes, state, counts, txhist):
                 subscore += txhist[t] + rxhist[t]
                 tx += txhist[t]
                 rx += rxhist[t]
-        score = nuniq(subscore)
+        score = nuniq(subscore) # number of unique members .. PLUS ..
+        score = score + weightsum(nodes,tup)
         if score > bestScore:
             bestScore = score
             bestSoln = tup
             bestList = subscore
             rxed = rx; txed = tx
+        elif score == bestScore:
+            print "score tie:"
+            print tup
+            print score
     return( (bestScore, bestSoln, rxed, txed) )
+
+
+def weightsum(nodes,tup):
+    totwt = 0.0
+    for ti in tup:
+        totwt += nodes[ti][2]
+    return(totwt)
+
+
+def printResults(nodes, (storG, storR, totalR, uniqR, uniqT, totalT, rxhist)):
+    fout = open("simResultsTable.txt",'w')
+    n = len(nodes)
+    fout.write("From\tTo\tWt\tStoreGen\tStoreRx\ttotalRX\tuniqRX\ttotalTX\tuniqTX\n")
+    for ni in xrange(n):
+        line = (nodes[ni][0] +"\t"+ nodes[ni][1] +"\t"+ str(round(nodes[ni][2],3)) +"\t"+
+                str(storG[ni]) +"\t"+ str(storR[ni]) +"\t"+
+                str(totalR[ni]) +"\t"+ str(uniqR[ni]) +"\t"+
+                str(totalT[ni]) +"\t"+ str(uniqT[ni]) +"\n")
+        fout.write(line)
+
+
+def printRXTXTables(steps, soln, rx, tx):
+    fout = open("simFtables.txt",'w')
+    n = len(rx)
+    soln = list(soln)
+    ts = [i for i in xrange(n) if i not in soln]
+    for ti in ts:
+        fout.write(str(ti)+"\t")
+    fout.write("\n")
+    for i in soln:
+        fout.write(str(i)+"\t")
+        rs = np.array(rx[i])
+        for j in ts:
+            if j in rs:
+                numjs = float(sum(rs == j))/float(steps)
+                fout.write(str(numjs) + "\t")
+            else:
+                fout.write("0.0\t")
+        fout.write("\n")
+    fout.close()
+    fout = open("simHtables.txt",'w')
+    for ti in ts:
+        fout.write(str(ti)+"\t") # column name
+    fout.write("\n")
+    for i in soln:
+        fout.write(str(i)+"\t")  # row name
+        rs = np.array(tx[i])
+        for j in ts:
+            if j in rs:
+                numjs = float(sum(rs == j))/float(steps)
+                fout.write(str(numjs) + "\t")
+            else:
+                fout.write("0.0\t")
+        fout.write("\n")
+    fout.close()
+
+
+def printColElem(sm, ts, i):
+    xs = sm.getcol(i).toarray().flatten()
+    for k in xrange(len(ts)):
+    	 print str(k) +"\t"+ str(ts[k]) +"\t"+ str(xs[k])
+
+
+def printRowElem(sm, ts, i):
+    xs = sm.getrow(i).toarray().flatten()
+    for k in xrange(len(ts)):
+    	 print str(k) +"\t"+ str(ts[k]) +"\t"+ str(xs[k])
+
 
         
 if __name__ == "__main__":
