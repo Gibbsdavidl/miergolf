@@ -67,12 +67,12 @@ def main():
     
     # output results ... did we find the solution? OR how much of it?
     # we should plot out graphs, and such.
-    printResults(nodes, counts)
+    printResults(state, nodes, counts)
 
     # then search for the solution.
     (score,soln,rxed,txed) = search(nodes, state, counts, rxhist)
 
-    printRXTXTables(state["timesteps"], soln, rxhist, txhist)
+    printRXTXTables(state, state["timesteps"], soln, rxhist, txhist)
 
     if state["full"] == "fullrun":
         # process arguments
@@ -83,21 +83,21 @@ def main():
         pool.close()
 
         print ("Config\tGraph\tType\tOptimTo\tMode\tSteps\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln")
-        print ( str(s["config"]) +"\t"+
-                str(s["graphfile"]) +"\t"+
-                str(s["lineGraph"]) +"\t"+
-                str(s["opton"]) +"\t"+
-                str(s["mode"]) +"\t"+
-                str(s["timesteps"]) + "\t"+
-                str(s["ants"]) + "\t"+
-                str(s["tx"]) +"\t"+
-                str(s["rx"]) +"\t"+
-                str(s["damp"]) +"\t"+
-                str(s["local"]) +"\t"+
+        print ( str(state["config"]) +"\t"+
+                str(state["graphfile"]) +"\t"+
+                str(state["lineGraph"]) +"\t"+
+                str(state["opton"]) +"\t"+
+                str(state["mode"]) +"\t"+
+                str(state["timesteps"]) + "\t"+
+                str(state["ants"]) + "\t"+
+                str(state["tx"]) +"\t"+
+                str(state["rx"]) +"\t"+
+                str(state["damp"]) +"\t"+
+                str(state["local"]) +"\t"+
                 str(score) +"\t"+
                 str(soln) +"\t"+
-                str(s["bestEver"][1]) +"\t"+
-                str(s["bestEver"][2]) + "\t" )
+                str(state["bestEver"][1]) +"\t"+
+                str(state["bestEver"][2]) + "\t" )
     else:
         print "Done:"
         print score
@@ -120,6 +120,23 @@ def printLineGraph(state, nodes, sparseMat):
     sys.stderr.write("Printed line graph.\n")
 
 
+def BAModel(nodes):
+    network = []
+    degs = np.zeros(nodes)     # the degree of each node
+    # start with a connected set of nodes
+    network.append( (0,1) )
+    degs[0] = 1
+    degs[1] = 1
+    for nodei in range(2,nodes):
+        # we add a node starting at node 2
+        for nodej in range(0,nodei):
+            pj = float(degs[nodej])/float(sum(degs))
+            if np.random.random() < pj:
+                network.append( (nodei, nodej) )
+                degs[nodei] += 1
+                degs[nodej] += 1
+    return(network)
+                
     
 def randomGraph(state):
     # this function is going to generate a graph, and write it
@@ -128,8 +145,9 @@ def randomGraph(state):
     ns = state["nodes"]
     es = state["edges"]
     deg = state["degpow"]
-    g1 = Graph.Static_Power_Law(ns,es,deg)
-    gedgesOrdered = g1.get_edgelist()
+    #g1 = Graph.Static_Power_Law(ns,es,deg)
+    #gedgesOrdered = g1.get_edgelist()
+    gedgesOrdered = BAModel(ns)
     gedges = []
     for ge in gedgesOrdered:  # give the edges a random direction
         if np.random.random() > 0.5:
@@ -266,7 +284,7 @@ def search(nodes, state, counts, rxhist):
     liner = 80
     for tup in it.combinations(idx, int(state["k"])):  # for each combination of k nodes
         liner = flowstatus(liner,step)
-        subscore = []; tx = []; rx = [];               #    gather all nodes that we TXed to, or RXed from 
+        subscore = []; tx = []; rx = [];               # gather all nodes that we TXed to, or RXed from 
         for t in tup:
             if state["mode"] == "tx":
                 subscore += txhist[t]
@@ -278,6 +296,7 @@ def search(nodes, state, counts, rxhist):
                 subscore += txhist[t] + rxhist[t]
                 tx += txhist[t]
                 rx += rxhist[t]
+        subscore = [si for si in subscore if si not in tup] # don't score what's in tup!
         score = nuniq(subscore) # number of unique members .. PLUS ..
         score = score + weightsum(nodes,tup)
         if score > bestScore:
@@ -301,8 +320,8 @@ def weightsum(nodes,tup):
     return(totwt)
 
 
-def printResults(nodes, (storG, storR, totalR, uniqR, uniqT, totalT, rxhist)):
-    fout = open("simResultsTable.txt",'w')
+def printResults(state, nodes, (storG, storR, totalR, uniqR, uniqT, totalT, rxhist)):
+    fout = open((state["graphfile"]+"simResultsTable.txt"),'w')
     n = len(nodes)
     fout.write("From\tTo\tWt\tStoreGen\tStoreRx\ttotalRX\tuniqRX\ttotalTX\tuniqTX\n")
     for ni in xrange(n):
@@ -311,10 +330,11 @@ def printResults(nodes, (storG, storR, totalR, uniqR, uniqT, totalT, rxhist)):
                 str(totalR[ni]) +"\t"+ str(uniqR[ni]) +"\t"+
                 str(totalT[ni]) +"\t"+ str(uniqT[ni]) +"\n")
         fout.write(line)
+    fout.close()
 
 
-def printRXTXTables(steps, soln, rx, tx):
-    fout = open("simFtables.txt",'w')
+def printRXTXTables(state, steps, soln, rx, tx):
+    fout = open((state["graphfile"]+"simFtables.txt"),'w')
     n = len(rx)
     soln = list(soln)
     ts = [i for i in xrange(n) if i not in soln]
@@ -332,7 +352,7 @@ def printRXTXTables(steps, soln, rx, tx):
                 fout.write("0.0\t")
         fout.write("\n")
     fout.close()
-    fout = open("simHtables.txt",'w')
+    fout = open((state["graphfile"]+"simHtables.txt"),'w')
     for ti in ts:
         fout.write(str(ti)+"\t") # column name
     fout.write("\n")
@@ -359,7 +379,6 @@ def printRowElem(sm, ts, i):
     xs = sm.getrow(i).toarray().flatten()
     for k in xrange(len(ts)):
     	 print str(k) +"\t"+ str(ts[k]) +"\t"+ str(xs[k])
-
 
         
 if __name__ == "__main__":
