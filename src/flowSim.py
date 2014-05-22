@@ -120,23 +120,10 @@ def printLineGraph(state, nodes, sparseMat):
     sys.stderr.write("Printed line graph.\n")
 
 
-def BAModel(nodes):
-    network = []
-    degs = np.zeros(nodes)     # the degree of each node
-    # start with a connected set of nodes
-    network.append( (0,1) )
-    degs[0] = 1
-    degs[1] = 1
-    for nodei in range(2,nodes):
-        # we add a node starting at node 2
-        for nodej in range(0,nodei):
-            pj = float(degs[nodej])/float(sum(degs))
-            if np.random.random() < pj:
-                network.append( (nodei, nodej) )
-                degs[nodei] += 1
-                degs[nodej] += 1
-    return(network)
-                
+#def BAModel(nodes, edges, degpow):
+
+    
+
     
 def randomGraph(state):
     # this function is going to generate a graph, and write it
@@ -145,9 +132,8 @@ def randomGraph(state):
     ns = state["nodes"]
     es = state["edges"]
     deg = state["degpow"]
-    #g1 = Graph.Static_Power_Law(ns,es,deg)
-    #gedgesOrdered = g1.get_edgelist()
-    gedgesOrdered = BAModel(ns)
+    g1 = Graph.Static_Power_Law(ns,es,deg)
+    gedgesOrdered = g1.get_edgelist()
     gedges = []
     for ge in gedgesOrdered:  # give the edges a random direction
         if np.random.random() > 0.5:
@@ -385,6 +371,7 @@ if __name__ == "__main__":
     import sys
     import getopt
     import multiprocessing as mp
+    from igraph import Graph
     import numpy as np
     import itertools as it
     from programState import *
