@@ -275,6 +275,9 @@ def nuniq(x):
 
 def search(nodes, state, counts, rxhist):
     sys.stderr.write("Searching Solutions...\n")
+        
+    cpus = int(state["cpus"])
+    pool = mp.Pool(cpus)
     txhist = counts[6]
     n = len(nodes)
     idx = range(0,n)
@@ -282,8 +285,38 @@ def search(nodes, state, counts, rxhist):
     rxed = []; txed = []
     step = 1
     liner = 80
+    alltups = []
+
+    # get all the possible solutions together
     for tup in it.combinations(idx, int(state["k"])):  # for each combination of k nodes
-        liner = flowstatus(liner,step)
+        alltups.append(tup)
+       
+    # split up the alltups into cpus number of lists
+    tuplist = np.array_split(np.array(alltups), cpus)
+
+    # build up a list of tuples with rxhist, txhist, and tups
+    dat = it.izip( it.repeat(state, cpus), it.repeat(nodes, cpus),
+                   it.repeat(rxhist,cpus), 
+                   it.repeat(txhist,cpus), tuplist)
+    allscores = pool.map(subSearch, dat)
+
+    maxi = 0; bestScore = 0.0
+    for score in allscores:
+        if score[0] > bestScore:
+            bestScore = score[0]
+            bestSoln = score[1]
+            rxed = score[2]
+            txed = score[3]
+
+    pool.close()
+    return( (bestScore, bestSoln, rxed, txed) )
+
+
+def subSearch( (state, nodes, rxhist, txhist, tups) ):
+    # score each tup
+    sys.stderr.write("Working on " + str(len(tups)) + " number of solutions...\n")
+    bestScore = 0.0; bestSoln = []; bestList = []
+    for tup in tups:
         subscore = []; tx = []; rx = [];               # gather all nodes that we TXed to, or RXed from 
         for t in tup:
             if state["mode"] == "tx":
@@ -304,12 +337,6 @@ def search(nodes, state, counts, rxhist):
             bestSoln = tup
             bestList = subscore
             rxed = rx; txed = tx
-        elif score == bestScore:
-            print "score tie:"
-            print tup
-            print score
-        step+=1
-    sys.stderr.write("\n")
     return( (bestScore, bestSoln, rxed, txed) )
 
 
