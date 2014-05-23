@@ -198,6 +198,16 @@ def flowstatus(liner,step):
     return(liner)
 
 
+def nextState(cps, r):
+    idx = 0
+    for c in cps:
+        if r < c:
+            return idx
+        else:
+            idx += 1
+    return 0
+
+
 def flowtron(state, sparseMat, nodes):    
     disp = state["disp"]
     steps = state["timesteps"]
@@ -215,13 +225,12 @@ def flowtron(state, sparseMat, nodes):
             nodestore[ni].append(newInfoBlock(ni, step))      # generate new information
             ps = sparseMat.getrow(ni).toarray().flatten()     # the transition probs
             ri = np.random.random()    
-            if all(ps == 0) or (ri < disp):                   # dissipate
+            if all(ps == 0.0) or (ri < disp):                 # dissipate
                 movement[ni] = -1
             else:                                             # or transfer the block
                 psi = np.random.random()
-                #tps = np.where(ps > 0)[0]                          # possible transitions, small vec
-                cps = ps.cumsum()                                   # the cumulative probabilities
-                nj = np.where(cps >= psi)[0][0]                     # where we're going
+                cps = ps.cumsum()                             # the cumulative probabilities
+                nj = nextState(cps,psi)                       # where we're going
                 movement[ni] = nj
 
         # then do a syncronous info-block move or dissipation. #
