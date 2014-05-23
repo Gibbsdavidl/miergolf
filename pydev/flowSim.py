@@ -220,7 +220,7 @@ def flowtron(state, sparseMat, nodes):
             else:                                             # or transfer the block
                 psi = np.random.random()
                 #tps = np.where(ps > 0)[0]                          # possible transitions, small vec
-                cps = ps.cumsum()[ps > 0]                           # the cumulative probabilities
+                cps = ps.cumsum()                                   # the cumulative probabilities
                 nj = np.where(cps >= psi)[0][0]                     # where we're going
                 movement[ni] = nj
 
