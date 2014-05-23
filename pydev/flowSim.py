@@ -59,7 +59,7 @@ def main():
     printLineGraph(state, nodes, sparseMat)
     
     # run the explicit flow
-    (rxhist,nstore,nbin) = flowtron(state, sparseMat, nodes, nodenames)
+    (rxhist,nstore,nbin) = flowtron(state, sparseMat, nodes)
 
     # some statistics on the flow
     counts = processSim(rxhist, nstore)
@@ -198,7 +198,7 @@ def flowstatus(liner,step):
     return(liner)
 
 
-def flowtron(state, sparseMat, nodes, nodenames):    
+def flowtron(state, sparseMat, nodes):    
     disp = state["disp"]
     steps = state["timesteps"]
     n = len(nodes)                # number of nodes in the line graph
@@ -219,9 +219,9 @@ def flowtron(state, sparseMat, nodes, nodenames):
                 movement[ni] = -1
             else:                                             # or transfer the block
                 psi = np.random.random()
-                tps = np.where(ps > 0)                           # possible transitions, small vec
-                cps = ps.cumsum()[ps > 0]                        # the cumulative probabilities
-                nj = tps[0][(cps >= psi).argmax()]               # where we're going
+                tps = np.where(ps > 0)[0]                           # possible transitions, small vec
+                cps = ps.cumsum()[ps > 0]                           # the cumulative probabilities
+                nj = tps[  np.where(cps >= psi)[0][0]  ]            # where we're going
                 movement[ni] = nj
 
         # then do a syncronous info-block move or dissipation. #
@@ -230,7 +230,7 @@ def flowtron(state, sparseMat, nodes, nodenames):
             ib = np.random.choice(nodestore[ni],1)[0]  # we just generated one, so there has to be at least 1!
             if nj == -1:                               # dissipate a random block, put it in the dustbin
                 nodestore[ni].remove(ib)
-                dustbin.append(ib)               # throw it in the dustbin  
+                #dustbin.append(ib)               # throw it in the dustbin  
             else:
                 ib["path"].append(nj)            # record where this block has been
                 nodehistory[nj].append(ib["source"])  # node nj has received a block with source ib["source"]
@@ -407,7 +407,17 @@ def printRowElem(sm, ts, i):
     for k in xrange(len(ts)):
     	 print str(k) +"\t"+ str(ts[k]) +"\t"+ str(xs[k])
 
-        
+
+def writeMatrix(mat, fileout):
+    fout = open(fileout,'w')
+    (m,n) = mat.get_shape()  # m - rows, n - cols
+    for i in xrange(m):
+        for j in xrange(n):
+            fout.write(str(mat[i,j]) + "\t")
+        fout.write("\n")
+    fout.close()
+
+         
 if __name__ == "__main__":
     import sys
     import getopt
