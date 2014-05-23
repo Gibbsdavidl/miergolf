@@ -205,10 +205,11 @@ def nextState(cps, r):
             return idx
         else:
             idx += 1
-    return 0
+    return (len(cps)-1)
 
 
-def flowtron(state, sparseMat, nodes):    
+def flowtron(state, sparseMat, nodes):
+    nids = range(0,len(nodes))
     disp = state["disp"]
     steps = state["timesteps"]
     n = len(nodes)                # number of nodes in the line graph
@@ -227,10 +228,10 @@ def flowtron(state, sparseMat, nodes):
             ri = np.random.random()    
             if all(ps == 0.0) or (ri < disp):                 # dissipate
                 movement[ni] = -1
-            else:                                             # or transfer the block
-                psi = np.random.random()
-                cps = ps.cumsum()                             # the cumulative probabilities
-                nj = nextState(cps,psi)                       # where we're going
+            else:
+                cps = np.cumsum(ps)
+                rnd = np.random.random() * cps[-1]
+                nj = np.searchsorted(cps, rnd)
                 movement[ni] = nj
 
         # then do a syncronous info-block move or dissipation. #
@@ -284,7 +285,6 @@ def nuniq(x):
 
 def search(nodes, state, counts, rxhist):
     sys.stderr.write("Searching Solutions...\n")
-        
     cpus = int(state["cpus"])
     pool = mp.Pool(cpus)
     txhist = counts[6]
@@ -304,7 +304,8 @@ def search(nodes, state, counts, rxhist):
     tuplist = np.array_split(np.array(alltups), cpus)
 
     # build up a list of tuples with rxhist, txhist, and tups
-    dat = it.izip( it.repeat(state, cpus), it.repeat(nodes, cpus),
+    dat = it.izip( it.repeat(state, cpus),
+                   it.repeat(nodes, cpus),
                    it.repeat(rxhist,cpus), 
                    it.repeat(txhist,cpus), tuplist)
     allscores = pool.map(subSearch, dat)
@@ -361,7 +362,8 @@ def printResults(state, nodes, (storG, storR, totalR, uniqR, uniqT, totalT, rxhi
     n = len(nodes)
     fout.write("From\tTo\tWt\tStoreGen\tStoreRx\ttotalRX\tuniqRX\ttotalTX\tuniqTX\n")
     for ni in xrange(n):
-        line = (nodes[ni][0] +"\t"+ nodes[ni][1] +"\t"+ str(round(nodes[ni][2],3)) +"\t"+
+        line = (nodes[ni][0] +"\t"+ nodes[ni][1] +"\t"+
+                str(round(nodes[ni][2],3)) +"\t"+
                 str(storG[ni]) +"\t"+ str(storR[ni]) +"\t"+
                 str(totalR[ni]) +"\t"+ str(uniqR[ni]) +"\t"+
                 str(totalT[ni]) +"\t"+ str(uniqT[ni]) +"\n")
