@@ -41,6 +41,7 @@ def initSimState (args, s):
     s["timesteps"] = int(programArgs[19])
     s["disp"] = float(programArgs[20])
     s["full"] = programArgs[21]  # should be fullrun, which does ants, or anything else, and just the sim is done
+    s["storesize"] = programArgs[22] # the size of the node stores
     return(s)
 
 

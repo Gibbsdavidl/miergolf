@@ -59,6 +59,6 @@ def buildGraph(s):
         rowsum = (sparseLil[r,:]).sum()
         if rowsum != 0.0:
             for c in xrange(n):
-                sparseLil[r,c] = (sparseLil[r,c]/rowsum) * s["damp"]
+                sparseLil[r,c] = (sparseLil[r,c]/rowsum) #* s["damp"]
 
     return((edgeDict,csc_matrix(sparseLil)))

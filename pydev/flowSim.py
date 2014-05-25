@@ -59,18 +59,19 @@ def main():
     printLineGraph(state, nodes, sparseMat)
     
     # run the explicit flow
-    (rxhist,nstore,nbin) = flowtron(state, sparseMat, nodes)
-
+    (rxhist,nstore) = flowtron2(state, sparseMat, nodes)
+     
     # some statistics on the flow
     counts = processSim(rxhist, nstore)
     txhist = counts[6]
+    rxhist = counts[7]
     
     # output results ... did we find the solution? OR how much of it?
     # we should plot out graphs, and such.
     printResults(state, nodes, counts)
 
     # then search for the solution.
-    (score,soln,rxed,txed) = search(nodes, state, counts, rxhist)
+    (score,soln,rxed,txed) = search(nodes, state, txhist, rxhist)
 
     printRXTXTables(state, state["timesteps"], soln, rxhist, txhist)
 
@@ -119,6 +120,33 @@ def printLineGraph(state, nodes, sparseMat):
     fout.close()
     sys.stderr.write("Printed line graph.\n")
 
+
+def randSelect(ps):
+    cps = np.cumsum(ps)
+    rnd = np.random.random() * cps[-1]
+    return(np.searchsorted(cps, rnd))
+
+    
+def uncorScaleFreeNetwork(nodes,deg):
+    network = []
+    degmax = int(ceil(sqrt(nodes)))
+    probDist = [pow(x, (-deg)) for x in range(2,degmax)]
+    nodeDegs = [min(randSelect(probDist)+2,degmax) for xi in xrange(nodes)]
+    totalEdges = sum(nodeDegs)/2
+    if totalEdges%2 != 0:
+        idx = np.random.choice(range(0,nodes),1)
+        nodeDegs[idx] +=1
+        totalEdges = sum(nodeDegs)/2
+    for e in xrange(totalEdges):
+        i = randSelect(nodeDegs) # pick a node
+        nodeDegs[i] -= 1         # decrement the degree on node i
+        j = randSelect(nodeDegs)
+        while i == j:
+            j = randSelect(nodeDegs)
+        nodeDegs[j] -= 1
+        network.append( (i,j) )
+    return(network)
+    
 
 def BAModel(nodes):
     network = []
@@ -187,6 +215,13 @@ def initNodeList(n):
         d[ni] = []
     return(d)
 
+    
+def initNodeSet(n):
+    d = dict()
+    for ni in xrange(n):
+        d[ni] = set()
+    return(d)
+
 
 def flowstatus(liner,step):
     if step % 97 == 0:
@@ -215,7 +250,6 @@ def flowtron(state, sparseMat, nodes):
     n = len(nodes)                # number of nodes in the line graph
     nodestore   = initNodeList(n) # holds the infoblocks
     nodehistory = initNodeList(n) # holds the list of where info came from
-    dustbin = []                  # the dust bin of history, where info-blocks go to retire
     sys.stderr.write("Running simulation for " +str(steps)+ " timesteps.\n")
     liner = 80
     # first produce new information and determine transitions #
@@ -250,9 +284,66 @@ def flowtron(state, sparseMat, nodes):
     return((nodehistory, nodestore, dustbin)) # nodehistory is rxhist
 
 
+def updateNodeStore(nodestore, node, block, storesize):
+    if len(nodestore[node]) > storesize:
+        i = np.random.randint(0,storesize)
+        nodestore[node].remove(nodestore[node][i])
+    nodestore[node].append(block)
+    return(nodestore)
+
+# there's an issue where some nodes, have a massive store of
+# info-blocks, dominated by a small set of nodes, and the
+# minority member blocks, are passed up for selection for passage.
+# A solution might be to hold a set of blocks rather than a list.
+# or to support a limited store size.
+def flowtron2(state, sparseMat, nodes):
+    nids = range(0,len(nodes))
+    disp = state["disp"]
+    steps = state["timesteps"]
+    n = len(nodes)                # number of nodes in the line graph
+    nodestore   = initNodeList(n) # holds the infoblocks
+    nodehistory = initNodeSet(n) # holds the list of where info came from
+    # nodestore = np.zeros( (n,n) )   # how much info contained in the store? Just an int at the right location
+    # nodehistory = np.zeros( (n,n) ) # make updating the store and array an O(1) operation
+    # movement = np.zeros(n)          # where is each going? make sure each gets written to at each iter
+    sys.stderr.write("Running simulation for " +str(steps)+ " timesteps.\n")
+    liner = 80
+    # first produce new information and determine transitions #
+    for step in xrange(steps):
+        liner = flowstatus(liner,step)
+        movement = [0 for i in xrange(n)]                 # record where each node will transfer to..
+        # elim the above line
+        for ni in xrange(n):                              # for each node
+            nodestore = updateNodeStore(nodestore, ni, newInfoBlock(ni,step), state["storesize"])
+            # nodestore[ni]
+            ps = sparseMat.getrow(ni).toarray().flatten()     # the transition probs
+            ri = np.random.random()    
+            if all(ps == 0.0) or (ri < disp):                 # dissipate
+                movement[ni] = -1
+            else:
+                cps = np.cumsum(ps)
+                rnd = np.random.random() * cps[-1]
+                nj = np.searchsorted(cps, rnd)
+                movement[ni] = nj
+        # then do a syncronous info-block move or dissipation. #
+        for ni in xrange(n):
+            nj = movement[ni]                          # the move destination
+            randblocki = np.random.randint(0, len(nodestore[ni]))
+            ib = nodestore[ni][randblocki]  # we just generated one, so there has to be at least 1!
+            if nj == -1:                               # dissipate a random block, put it in the dustbin
+                nodestore[ni].remove(ib)
+            else:
+                nodehistory[nj].add(ib["source"])  # node nj has received a block with source ib["source"]
+                nodestore[ni].remove(ib)
+                nodestore = updateNodeStore(nodestore, nj, ib, state["storesize"])
+    sys.stderr.write("\n")
+    return((nodehistory, nodestore)) # nodehistory is rxhist
+
+    
     
 def processSim(nhist, nstore):
     sys.stderr.write("Processing Simulation...\n")
+    rxhist = dict()
     n = len(nhist)
     storG = np.zeros(n)  # the amt of info generated by self
     storR = np.zeros(n)  # the amt of into received by others
@@ -262,6 +353,7 @@ def processSim(nhist, nstore):
     totalT = np.zeros(n) # total amt sent out
     txhist = []          # where the info *ultimately* ended up
     for ni in xrange(n):
+        rxhist[ni] = list(nhist[ni])
         storG[ni] = sum(map(lambda y: y == ni, map(lambda x: x["source"],nstore[ni])))
         storR[ni] = sum(map(lambda y: y != ni, map(lambda x: x["source"],nstore[ni])))
         uniqR[ni] = len(set(nhist[ni]))
@@ -276,18 +368,17 @@ def processSim(nhist, nstore):
         uniqT[ni] = x
         totalT[ni] = y
         txhist.append(l)
-    return( (storG, storR, totalR, uniqR, uniqT, totalT, txhist) )
+    return( (storG, storR, totalR, uniqR, uniqT, totalT, txhist, rxhist) )
             
 
 def nuniq(x):
     return(len(set(x)))
         
 
-def search(nodes, state, counts, rxhist):
+def search(nodes, state, txhist, rxhist):
     sys.stderr.write("Searching Solutions...\n")
     cpus = int(state["cpus"])
     pool = mp.Pool(cpus)
-    txhist = counts[6]
     n = len(nodes)
     idx = range(0,n)
     bestScore = 0; bestSoln = []; bestList = [];
@@ -357,7 +448,7 @@ def weightsum(nodes,tup):
     return(totwt)
 
 
-def printResults(state, nodes, (storG, storR, totalR, uniqR, uniqT, totalT, rxhist)):
+def printResults(state, nodes, (storG, storR, totalR, uniqR, uniqT, totalT, txhist, rxhist)):
     fout = open((state["graphfile"]+"simResultsTable.txt"),'w')
     n = len(nodes)
     fout.write("From\tTo\tWt\tStoreGen\tStoreRx\ttotalRX\tuniqRX\ttotalTX\tuniqTX\n")
@@ -432,6 +523,7 @@ def writeMatrix(mat, fileout):
 if __name__ == "__main__":
     import sys
     import getopt
+    from math import sqrt, ceil
     import multiprocessing as mp
     import numpy as np
     import itertools as it
