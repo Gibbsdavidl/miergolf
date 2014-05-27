@@ -23,36 +23,46 @@ disipate             : 0.1
 full run             : fullrun
 '''
 
-def doMainSims():
-    import subprocess
-    numRestarts="3"
-    numAnts="20"
-    converge="0.0001"
-    local="100"
-    evap="0.1"
-    damp="0.99"
-    alpha="1.0"
-    beta="1.0"
-    mode="both"
-    opton="touch"
-    tx="0.000001"
-    rx="0.000001"
-    k="4"
-    cpus="4"
-    linegraph="linegraph"
-    perms="1000"
-    simnode="100"
-    simedges="100"
-    simdeg="6"
-    timesteps="5000"
-    dissipate="0.2"
-    full="fullrun"
 
+def printConfig(filename, k, cpus, nodes):
+    fout = open(filename,'w')
+    steps = nodes * 1000
+    fout.write("number of restarts   : 3\n")
+    fout.write("number of ants       : 18\n")
+    fout.write("converge threshold   : 0.0001\n")
+    fout.write("local optimization   : 20\n")
+    fout.write("evaporation rate     : 0.1\n")
+    fout.write("dampening            : 0.99\n")
+    fout.write("alpha                : 1.0\n")
+    fout.write("beta                 : 1.0\n")
+    fout.write("mode                 : both\n")
+    fout.write("optimize on          : touch\n")
+    fout.write("transmit threshold   : 0.0001\n")
+    fout.write("receive threshold    : 0.0001\n")
+    fout.write("k                    : "+ str(k) + "\n")
+    fout.write("cpus                 : "+str(cpus)+"\n")
+    fout.write("lineGraph            : linegraph\n")
+    fout.write("permutes             : 1000\n")
+    fout.write("sim nodes            : "+str(nodes)+"\n")
+    fout.write("sim edges            : 0\n")
+    fout.write("sim degree power     : 0\n")
+    fout.write("timesteps            : "+str(steps)+"\n")
+    fout.write("dissipate             : 0.1\n")
+    fout.write("full run             : fullrun\n")
+    fout.write("store size         : 20\n")
+    fout.close()
     
 
-    for simi in xrange(25):
-        print simi
-        graphname = "simgraph" + str(simi) + ".txt"
-        outname = "output_" + str(simi) + ".txt"
-        theCmd = "ipython ../mipdao/pydev/flowSim.py configSim.txt " + graphname + " > " + outname
-        subprocess.call(theCmd, shell=True)
+
+def doManySims():
+    import subprocess
+
+    for k in [20,40,60,80,100]:
+        for i in xrange(10):
+            print k
+            graphname = "simgraph_" + str(k) + "_" + str(i) + ".txt"
+            outname = "output_" + str(k) + "_" + str(i) + ".txt"
+            configname = "config_"+ str(k) + "_" + str(i) + ".txt"
+            printConfig(configname, k, 18, 
+            theCmd = "ipython ../mipdao/pydev/flowSim.py configSim.txt " + graphname + " > " + outname
+            subprocess.call(theCmd, shell=True)

@@ -83,13 +83,14 @@ def main():
         s2 = optimize (pool, state, nodes, sparseMat)
         pool.close()
 
-        print ("Config\tGraph\tType\tOptimTo\tMode\tSteps\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln")
+        print ("Config\tGraph\tType\tOptimTo\tMode\tSteps\tNodes\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln")
         print ( str(state["config"]) +"\t"+
                 str(state["graphfile"]) +"\t"+
                 str(state["lineGraph"]) +"\t"+
                 str(state["opton"]) +"\t"+
                 str(state["mode"]) +"\t"+
                 str(state["timesteps"]) + "\t"+
+                str(len(nodes)) + "\t"+
                 str(state["ants"]) + "\t"+
                 str(state["tx"]) +"\t"+
                 str(state["rx"]) +"\t"+
