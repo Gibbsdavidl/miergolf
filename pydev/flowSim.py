@@ -75,6 +75,8 @@ def main():
 
     printRXTXTables(state, state["timesteps"], soln, rxhist, txhist)
 
+    wts = weightsum(nodes,soln)
+    
     if state["full"] == "fullrun":
         # process arguments
         sys.stderr.write("\nRunning optimization..\n")
@@ -83,7 +85,7 @@ def main():
         s2 = optimize (pool, state, nodes, sparseMat)
         pool.close()
 
-        print ("Config\tGraph\tType\tOptimTo\tMode\tSteps\tNodes\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln")
+        print ("Config\tGraph\tType\tOptimTo\tMode\tSteps\tNodes\tAnts\tTx\tRx\tDamp\tLocal\tSimScore\tSimSoln\tAntScore\tAntSoln\tWt")
         print ( str(state["config"]) +"\t"+
                 str(state["graphfile"]) +"\t"+
                 str(state["lineGraph"]) +"\t"+
@@ -99,7 +101,8 @@ def main():
                 str(score) +"\t"+
                 str(soln) +"\t"+
                 str(state["bestEver"][1]) +"\t"+
-                str(state["bestEver"][2]) + "\t" )
+                str(state["bestEver"][2]) +"\t"+
+                str(wts))
     else:
         print "Done:"
         print score

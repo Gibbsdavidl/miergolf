@@ -31,7 +31,7 @@ def main():
             outname = "output_" + str(n) + "_" + str(i) + ".txt"
             configname = "config_"+ str(n) + "_" + str(i) + ".txt"
             printConfig(configname, 4, 9, n)
-            theCmd = "ipython ../mipdao/pydev/flowSim.py configSim.txt " + graphname + " > " + outname
+            theCmd = "ipython ../mipdao/pydev/flowSim.py "+configname+" + graphname + " > " + outname
             os.system(theCmd)
 
 
