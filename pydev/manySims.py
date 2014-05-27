@@ -23,6 +23,18 @@ disipate             : 0.1
 full run             : fullrun
 '''
 
+def main():
+    for n in [20,40,60,80,100]:
+        for i in xrange(10):
+            print str(k) + "   " + str(i)
+            graphname = "simgraph_" + str(k) + "_" + str(i) + ".txt"
+            outname = "output_" + str(k) + "_" + str(i) + ".txt"
+            configname = "config_"+ str(k) + "_" + str(i) + ".txt"
+            printConfig(configname, 4, 9, n)
+            theCmd = "ipython ../mipdao/pydev/flowSim.py configSim.txt " + graphname + " > " + outname
+            os.system(theCmd)
+
+
 
 def printConfig(filename, k, cpus, nodes):
     fout = open(filename,'w')
@@ -51,20 +63,7 @@ def printConfig(filename, k, cpus, nodes):
     fout.write("full run             : fullrun\n")
     fout.write("store size         : 20\n")
     fout.close()
-    
 
-
-def main():
-
-    for k in [20,40,60,80,100]:
-        for i in xrange(10):
-            print str(k) + "   " + str(i)
-            graphname = "simgraph_" + str(k) + "_" + str(i) + ".txt"
-            outname = "output_" + str(k) + "_" + str(i) + ".txt"
-            configname = "config_"+ str(k) + "_" + str(i) + ".txt"
-            printConfig(configname, k, 18, 
-            theCmd = "ipython ../mipdao/pydev/flowSim.py configSim.txt " + graphname + " > " + outname
-            os.system(theCmd)
 
 
 if __name__ == "__main__":
