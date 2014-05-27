@@ -27,9 +27,9 @@ def main():
     for n in [20,40,60,80,100]:
         for i in xrange(10):
             print str(k) + "   " + str(i)
-            graphname = "simgraph_" + str(k) + "_" + str(i) + ".txt"
-            outname = "output_" + str(k) + "_" + str(i) + ".txt"
-            configname = "config_"+ str(k) + "_" + str(i) + ".txt"
+            graphname = "simgraph_" + str(n) + "_" + str(i) + ".txt"
+            outname = "output_" + str(n) + "_" + str(i) + ".txt"
+            configname = "config_"+ str(n) + "_" + str(i) + ".txt"
             printConfig(configname, 4, 9, n)
             theCmd = "ipython ../mipdao/pydev/flowSim.py configSim.txt " + graphname + " > " + outname
             os.system(theCmd)
