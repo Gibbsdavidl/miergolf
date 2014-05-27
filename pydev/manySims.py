@@ -58,16 +58,16 @@ def main():
 
     for k in [20,40,60,80,100]:
         for i in xrange(10):
-            print k
+            print str(k) + "   " + str(i)
             graphname = "simgraph_" + str(k) + "_" + str(i) + ".txt"
             outname = "output_" + str(k) + "_" + str(i) + ".txt"
             configname = "config_"+ str(k) + "_" + str(i) + ".txt"
             printConfig(configname, k, 18, 
             theCmd = "ipython ../mipdao/pydev/flowSim.py configSim.txt " + graphname + " > " + outname
-            subprocess.call(theCmd, shell=True)
+            os.system(theCmd)
 
 
 if __name__ == "__main__":
     import sys
-    import subprocess
+    import os
     main()
