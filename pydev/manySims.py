@@ -26,7 +26,7 @@ full run             : fullrun
 def main():
     for n in [20,40,60,80,100]:
         for i in xrange(10):
-            print str(k) + "   " + str(i)
+            print str(n) + "   " + str(i)
             graphname = "simgraph_" + str(n) + "_" + str(i) + ".txt"
             outname = "output_" + str(n) + "_" + str(i) + ".txt"
             configname = "config_"+ str(n) + "_" + str(i) + ".txt"
