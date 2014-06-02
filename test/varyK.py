@@ -38,15 +38,16 @@ def main():
             print __doc__
             sys.exit(0)
 
-    pathtomipdao = args[1]
-    graphname = args[2]
-    outputpath = args[3]
-    cpus = int(args[4])
+    pathtomipdao = args[0]
+    graphname = args[1]
+    outputpath = args[2]
+    cpus = int(args[3])
+
     for k in [1,2,3,4,5,6,7,8]:
         for i in xrange(3):
             print "K: " + str(k) + "   " + str(i)
             outname = outputpath + "_varyK_output_" + str(k) + "_" + str(i) + ".txt"
-            configname = "varyK_config_"+ str(k) + "_" + str(i) + ".txt"
+            configname = outputpath + "_varyK_config_"+ str(k) + "_" + str(i) + ".txt"
             printConfig(configname, k, cpus, 0)
             theCmd = "ipython " + pathtomipdao + "pydev/main.py "+configname+ " " + graphname + " > " + outname
             os.system(theCmd)
