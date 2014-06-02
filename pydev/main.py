@@ -48,23 +48,26 @@ def main():
     printResults(s2,nodes)
 
 
-def printResults(s,nodes):
-    print "Graph Type: " + str(s["lineGraph"])
-    print "OptimizeTo: " + str(s["opton"])
-    print "Mode:       " + str(s["mode"])
-    print "Tx: " + str(s["tx"]) +"  Rx: "+str(s["rx"])
-    print "Dampening:  " + str(s["damp"])
-    print "Ants:       " + str(s["ants"])
-    print "Local Opt : " + str(s["local"])
-    print "Iterations: " + str(s["iters"])
-    print "config file " + str(s["config"])
-    print "graph file: " + str(s["graphfile"]) 
-    print "Solution  : " + str(s["bestEver"])
-    print "Selected Edges: "
-    for (i,k) in nodes.items():
-        if i in s["bestEver"][2] or k[3] > 0.7:
-            print str(i) +"   " + str(k)
-            
+def printResults(state,nodes):
+    wts = weightsum(nodes, state["bestEver"][2])
+    print ("Config\tGraph\tType\tOptimTo\tMode\tNodes\tAnts\tTx\tRx\tDamp\tLocal\tScore\tTouch\tSoln\tWt")
+    print ( str(state["config"]) +"\t"+
+            str(state["graphfile"]) +"\t"+
+            str(state["lineGraph"]) +"\t"+
+            str(state["opton"]) +"\t"+
+            str(state["mode"]) +"\t"+
+            str(len(nodes)) + "\t"+
+            str(state["ants"]) + "\t"+
+            str(state["tx"]) +"\t"+
+            str(state["rx"]) +"\t"+
+            str(state["damp"]) +"\t"+
+            str(state["local"]) +"\t"+
+            str(state["bestEver"][0]) +"\t"+
+            str(state["bestEver"][1]) +"\t"+
+            str(state["bestEver"][2]) +"\t"+
+            str(wts))
+
+                        
 
 def printGraph(flag, sparseMat):
     if flag == 1:

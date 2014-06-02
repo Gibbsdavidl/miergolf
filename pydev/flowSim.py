@@ -125,51 +125,6 @@ def printLineGraph(state, nodes, sparseMat):
     sys.stderr.write("Printed line graph.\n")
 
 
-def randSelect(ps):
-    cps = np.cumsum(ps)
-    rnd = np.random.random() * cps[-1]
-    return(np.searchsorted(cps, rnd))
-
-    
-def uncorScaleFreeNetwork(nodes,deg):
-    network = []
-    degmax = int(ceil(sqrt(nodes)))
-    probDist = [pow(x, (-deg)) for x in range(2,degmax)]
-    nodeDegs = [min(randSelect(probDist)+2,degmax) for xi in xrange(nodes)]
-    totalEdges = sum(nodeDegs)/2
-    if totalEdges%2 != 0:
-        idx = np.random.choice(range(0,nodes),1)
-        nodeDegs[idx] +=1
-        totalEdges = sum(nodeDegs)/2
-    for e in xrange(totalEdges):
-        i = randSelect(nodeDegs) # pick a node
-        nodeDegs[i] -= 1         # decrement the degree on node i
-        j = randSelect(nodeDegs)
-        while i == j:
-            j = randSelect(nodeDegs)
-        nodeDegs[j] -= 1
-        network.append( (i,j) )
-    return(network)
-    
-
-def BAModel(nodes):
-    network = []
-    degs = np.zeros(nodes)     # the degree of each node
-    # start with a connected set of nodes
-    network.append( (0,1) )
-    degs[0] = 1
-    degs[1] = 1
-    for nodei in range(2,nodes):
-        # we add a node starting at node 2
-        for nodej in range(0,nodei):
-            pj = float(degs[nodej])/float(sum(degs))
-            if np.random.random() < pj:
-                network.append( (nodei, nodej) )
-                degs[nodei] += 1
-                degs[nodej] += 1
-    return(network)
-                
-    
 def randomGraph(state):
     # this function is going to generate a graph, and write it
     # to a file, as specified in the config file.
@@ -179,7 +134,9 @@ def randomGraph(state):
     deg = state["degpow"]
     #g1 = Graph.Static_Power_Law(ns,es,deg)
     #gedgesOrdered = g1.get_edgelist()
-    gedgesOrdered = BAModel(ns)
+    #gedgesOrdered = HairBall(ns)
+    #gedgesOrdered = BAModel(1, ns, 0.1, 0.2)
+    gedgesOrdered = Bollobas(0.4, 0.2, 0.4, 0.1, 0.0, 0.2, ns)
     gedges = []
     for ge in gedgesOrdered:  # give the edges a random direction
         if np.random.random() > 0.5:
@@ -523,7 +480,7 @@ def writeMatrix(mat, fileout):
         fout.write("\n")
     fout.close()
 
-         
+
 if __name__ == "__main__":
     import sys
     import getopt
@@ -534,6 +491,7 @@ if __name__ == "__main__":
     from programState import *
     from graph import *
     from antopt import *
+    from randomNets import *
     main()
 
 

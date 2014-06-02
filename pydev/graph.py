@@ -62,3 +62,10 @@ def buildGraph(s):
                 sparseLil[r,c] = (sparseLil[r,c]/rowsum) #* s["damp"]
 
     return((edgeDict,csc_matrix(sparseLil)))
+
+
+def weightsum(nodes,tup):
+    totwt = 0.0
+    for ti in tup:
+        totwt += nodes[ti][2]
+    return(totwt)

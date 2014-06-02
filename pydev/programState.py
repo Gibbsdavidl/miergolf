@@ -16,7 +16,7 @@ def initProgramState (args):
                     "opton": programArgs[9],         # optimize on
                     "tx"   : float(programArgs[10]), # tx cutoff for counting if a node is "touched"
                     "rx"   : float(programArgs[11]), # rx cutoff for counting if a node is "touched"
-                    "bestEver" : (0.0, 0.0, []),
+                    "bestEver" : (0.0, 0.0, []),     # (bestScore, bestTouch, bestSoln)
                     "bestRest" : (0.0, 0.0, []),
                     "bestIter" : (0.0, 0.0, []),
                     "config" : args[0],              # the config file name

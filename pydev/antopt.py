@@ -114,9 +114,9 @@ def localSearch(s, ps, bestSoln, sparseMat, nodes):
         for i in xrange(n):
             remr  = np.random.choice(testsoln,1)[0]        # the one to remove
             solnr = [xi for xi in testsoln if xi != remr]  # fragment list
-            solni = testsoln[0];                                    # pick a new one, not in the list already
+            solni = testsoln[0];                           # pick a new one, not in the list already
             while solni in testsoln:
-                solni = bisect(cs,np.random.random())         # the one to add, based on ps
+                solni = bisect(cs,np.random.random())      # the one to add, based on ps
             testsoln = list( (solnr + [solni]) )           # the new soln list
             score    = scoreSoln(testsoln, s, sparseMat, nodes)   # score it
             if s["opton"] == "touch":
@@ -126,8 +126,16 @@ def localSearch(s, ps, bestSoln, sparseMat, nodes):
                     newSoln = list(testsoln)
                 else:
                     testsoln = list(newSoln)  # else: return to previous soln                    
-            else:
-                print "Not implemented yet!"
+            elif s["opton"] == "score":
+                if score[0] > newScore:
+                    newScore = score[0]          # if better: keep it
+                    newTouch = score[1]
+                    newSoln = list(testsoln)
+                else:
+                    testsoln = list(newSoln)  # else: return to previous soln                    
+
+            else:        
+                print "This opton mode is not implemented yet!, use score or touch."
                 sys.exit(1)
         return (newSoln, (newScore, newTouch))
 
@@ -175,9 +183,9 @@ def scoreBoth(s,lap,pts,lap_t,pst_t,wt):
         fsum = np.array(f.sum(1)).flatten()
         hsum = np.array(h.sum(1)).flatten()
         fh = fsum + hsum
-        touch = sum(fh > s["tx"]) + wt
+        touch = sum(fh > s["tx"])
         #  best score; best touch #
-    return((fh.sum(), touch))
+    return((touch+wt, touch))
 
 
 
@@ -188,7 +196,7 @@ def scoreRX(s,lap,pts,wt):
     else: # came back as a sparse matrix
         fsum = np.array(f.sum(1)).flatten()
         ftouch = sum(fsum > s["rx"])
-    return((fsum.sum(), ftouch))
+    return((ftouch+wt, ftouch))
 
 
 def scoreTX(s, lap_t, pst_t, wt):
@@ -198,7 +206,7 @@ def scoreTX(s, lap_t, pst_t, wt):
     else: # came back as a sparse matrix
         hsum = np.array(h.sum(1)).flatten()
         htouch = sum(hsum > s["tx"])
-    return((hsum.sum(), htouch))
+    return((htouch+wt, htouch))
 
 
 def scoreMats(soln, s, smat):
@@ -237,8 +245,10 @@ def scoreMax(solns, s):
             if best < b:
                 best = idx
         elif s["opton"] == "combo":
-            if best < combo(b,c):
-                best = idx
+            print "opton: combo -- is not implemented. Please use opton:score or opton:touch"
+            sys.exit(1)
+            #if best < combo(b,c):
+            #    best = idx
         else:
             print "ScoreMax Error: opton must be score, touch, or combo"
             sys.exit(1)
