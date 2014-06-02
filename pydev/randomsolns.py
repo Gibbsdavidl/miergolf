@@ -44,50 +44,73 @@ def computeScores(pool, s, solns, sparseMat):
     return(scores)
 
 
-def scoreSoln( (solns, (s,smat)) ):
-    # ss    -- the solutions set S
+def weightsum(nodes,tup):
+    totwt = 0.0
+    for ti in tup:
+        totwt += nodes[ti][2]
+    return(totwt)
+
+
+def scoreSoln(soln, s, smat, nodes):
+    # soln -- the solutions set S
     # smat  -- nxn sparse matrix
-    # ts    -- the set T
-    n = (smat.shape[0]-1)
-    ts = [i for i in xrange(n) if i not in solns]
-    idn = sp.eye(len(ts))
-    pst = subMatrix(solns, ts, smat)
-    pts = subMatrix(ts, solns, smat)
-    ptt = subMatrix(ts, ts, smat)
+    # s     -- the program state
+    wt = weightsum(nodes,soln)
+    n = (smat.shape[0])
+    ts = [i for i in xrange(n) if i not in soln] # set T
+    idn = sp.eye(len(ts),len(ts))
+    pst = subMatrix(soln, ts, smat) # prob of S to T
+    pts = subMatrix(ts, soln, smat) # prob of T to S
+    ptt = subMatrix(ts, ts, smat)    # prob of T to T
     lap = sp.csc_matrix(idn-ptt)
     pst_t = sp.csc_matrix(pst.transpose())
     lap_t = sp.csc_matrix(lap.transpose())    
     if s["mode"] == "both":
-        f = lin.spsolve(lap, pts) 
-        h = lin.spsolve(lap_t, pst_t)
-        if type(f) == type(np.array([])): # came back as an array
-            ftouch = sum(f > s["tx"])
-            htouch = sum(h > s["rx"])
-        else: # came back as a sparse matrix
-            ftouch = sum(f.toarray().flatten() > s["tx"])
-            htouch = sum(h.toarray().flatten() > s["rx"])
-            #         best score  ... best touch       #
-            return((f.sum()+h.sum(), ftouch+htouch))
+        return(scoreBoth(s,lap,pts,lap_t,pst_t,wt))
     elif s["mode"] == "tx":
-        f = lin.spsolve(lap, pts) 
-        if type(f) == type(np.array([])): # came back as an array
-            ftouch = sum(f > s["tx"])
-        else: # came back as a sparse matrix
-            ftouch = sum(f.toarray().flatten() > s["tx"])
-            #         best score  ... best touch       #
-            return((f.sum(), ftouch))
+        return(scoreTX(s,lap,pts,wt))
     elif s["mode"] == "rx":
-        h = lin.spsolve(lap_t, pst_t)
-        if type(h) == type(np.array([])): # came back as an array
-            htouch = sum(h > s["rx"])
-        else: # came back as a sparse matrix
-            htouch = sum(h.toarray().flatten() > s["rx"])
-            #         best score  ... best touch       #
-            return((h.sum(), htouch))
+        return(scoreRX(s,lap_t,pst_t,wt))
     else:
-        print "Error! mode must be rx, tx, or both."
+        print "ScoreSoln Error! mode must be rx, tx, or both."
         sys.exit(1)
-        
+
+
+def scoreBoth(s,lap,pts,lap_t,pst_t,wt):
+    f = lin.spsolve(lap, pts) 
+    h = lin.spsolve(lap_t, pst_t)
+    if type(f) == type(np.array([])): # came back as an array
+        fh = f+h
+        score = fh.sum()
+        touch = (fh > s["tx"]).sum()
+    else: # came back as a sparse matrix
+        fsum = np.array(f.sum(1)).flatten()
+        hsum = np.array(h.sum(1)).flatten()
+        fh = fsum + hsum
+        touch = sum(fh > s["tx"])
+        #  best score; best touch #
+    return((touch+wt, touch))
+
+
+
+def scoreRX(s,lap,pts,wt):
+    f = lin.spsolve(lap, pts) 
+    if type(f) == type(np.array([])): # came back as an array
+        ftouch = sum(f > s["rx"])
+    else: # came back as a sparse matrix
+        fsum = np.array(f.sum(1)).flatten()
+        ftouch = sum(fsum > s["rx"])
+    return((ftouch+wt, ftouch))
+
+
+def scoreTX(s, lap_t, pst_t, wt):
+    h = lin.spsolve(lap_t, pst_t)
+    if type(h) == type(np.array([])): # came back as an array
+        htouch = sum(h > s["tx"])
+    else: # came back as a sparse matrix
+        hsum = np.array(h.sum(1)).flatten()
+        htouch = sum(hsum > s["tx"])
+    return((htouch+wt, htouch))
 
 
 def subMatrix(rows, cols, A):
