@@ -14,7 +14,7 @@ def permute (pool, s, nodes, sparseMat):
     solns = generateRandomSolutions(pool, int(s["k"]), int(s["permutes"]), len(nodes))
                             
     # score each solution #
-    scores = computeScores(pool, s, solns, sparseMat)
+    scores = computeScores(pool, s, solns, sparseMat, nodes)
 
     # the list to print out.
     res0 = buildReturnList (solns, scores)
@@ -38,8 +38,11 @@ def genSoln((i, k, n)):
     return(soln)
 
 
-def computeScores(pool, s, solns, sparseMat):
-    scoreDat = it.izip(solns, it.repeat( (s,sparseMat), len(solns)))
+def computeScores(pool, s, solns, sparseMat, nodes):
+    scoreDat = it.izip(solns, 
+                       it.repeat(s, len(solns)),
+                       it.repeat(sparseMat, len(solns)),
+                       it.repeat(nodes,len(solns)))
     scores = pool.map(scoreSoln, scoreDat)
     return(scores)
 
@@ -51,7 +54,7 @@ def weightsum(nodes,tup):
     return(totwt)
 
 
-def scoreSoln(soln, s, smat, nodes):
+def scoreSoln( (soln, s, smat, nodes) ):
     # soln -- the solutions set S
     # smat  -- nxn sparse matrix
     # s     -- the program state
