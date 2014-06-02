@@ -45,8 +45,7 @@ def main():
     for k in [1,2,3,4,5,6,7,8]:
         for i in xrange(3):
             print "K: " + str(k) + "   " + str(i)
-            graphname = "bollobas200.txt"
-            outname = "varyK_output_" + str(k) + "_" + str(i) + ".txt"
+            outname = outputpath + "_varyK_output_" + str(k) + "_" + str(i) + ".txt"
             configname = "varyK_config_"+ str(k) + "_" + str(i) + ".txt"
             printConfig(configname, k, cpus, 0)
             theCmd = "ipython " + pathtomipdao + "pydev/main.py "+configname+ " " + graphname + " > " + outname
@@ -87,4 +86,5 @@ def printConfig(filename, k, cpus, nodes):
 if __name__ == "__main__":
     import sys
     import os
+    import getopt
     main()
