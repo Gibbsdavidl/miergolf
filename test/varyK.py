@@ -38,6 +38,8 @@ def main():
             print __doc__
             sys.exit(0)
 
+    print args
+
     pathtomipdao = args[0]
     graphname = args[1]
     outputpath = args[2]
