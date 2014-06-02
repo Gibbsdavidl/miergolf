@@ -1,0 +1,8 @@
+RutR	NemA	0.5
+RutR	NemR	0.5
+RutR	gloA	0.5
+NemR	NemA	0.5
+NemR	gloA	0.5
+MicA	gloA	0.5
+RutR	RutR	0.5
+NemR	NemR	0.5
