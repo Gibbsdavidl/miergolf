@@ -26,15 +26,29 @@ full run             : fullrun
 
 
 def main():
-    cpus = 4
-    nodes = 40    
-    for k in [2,3,4,5,6,7,8]:
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
+    except getopt.error, msg:
+        print msg
+        print "for help use --help"
+        sys.exit(2)
+    # process options
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            print __doc__
+            sys.exit(0)
+
+    pathtomipdao = args[1]
+    graphname = args[2]
+    outputpath = args[3]
+    cpus = int(args[4])
+    for k in [1,2,3,4,5,6,7,8]:
         for i in xrange(3):
             print "K: " + str(k) + "   " + str(i)
             graphname = "bollobas200.txt"
             outname = "varyK_output_" + str(k) + "_" + str(i) + ".txt"
             configname = "varyK_config_"+ str(k) + "_" + str(i) + ".txt"
-            printConfig(configname, k, 6, 60)
+            printConfig(configname, k, cpus, 0)
             theCmd = "ipython mipdao/pydev/main.py "+configname+ " " + graphname + " > " + outname
             os.system(theCmd)
 
