@@ -49,7 +49,7 @@ def main():
             outname = "varyK_output_" + str(k) + "_" + str(i) + ".txt"
             configname = "varyK_config_"+ str(k) + "_" + str(i) + ".txt"
             printConfig(configname, k, cpus, 0)
-            theCmd = "ipython mipdao/pydev/main.py "+configname+ " " + graphname + " > " + outname
+            theCmd = "ipython " + pathtomipdao + "pydev/main.py "+configname+ " " + graphname + " > " + outname
             os.system(theCmd)
 
 
