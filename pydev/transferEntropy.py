@@ -185,8 +185,8 @@ def edgelistTE(exprfile, genefile, edgefile, fileout, yl, start, end, reps, cpus
     dats   = map(lambda x: x.split("\t"), dat)
     edge   = open(edgefile,'r').read().strip().split("\n")
     edges  = map(lambda x: x.split("\t"), edge)
-    edgel1 = [x[1] for x in edges]
-    edgel2 = [x[2] for x in edges]
+    edgel1 = [x[0] for x in edges]
+    edgel2 = [x[1] for x in edges]
     fout   = open(fileout,'w')
     marker = 0
     flag = 1
@@ -214,3 +214,5 @@ def edgelistTE(exprfile, genefile, edgefile, fileout, yl, start, end, reps, cpus
 
 #edgelistTE("grn_expr_table.txt","grn_gene_names.txt","grn_yeastrac_edges.txt", "grn_weights_lag2_full", 2, 41, 1000, 8)
 
+
+#edgelistTE("Data/exprmat.csv","Data/genesymbols.csv","Data/Eser_Paper_SI/edgesToTest.tsv", "EserWeights", 2, 2, 41, 2000, 4)
