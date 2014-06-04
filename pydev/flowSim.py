@@ -217,22 +217,24 @@ def flowtron(state, sparseMat, nodes):
     for step in xrange(steps):
         liner = flowstatus(liner,step)
         movement = [0 for i in xrange(n)]                 # record where each node will transfer to..
+        whichblock = [0 for i in xrange(n)]
         for ni in xrange(n):                              # for each node
             nodestore[ni].append(newInfoBlock(ni, step))      # generate new information
             ps = sparseMat.getrow(ni).toarray().flatten()     # the transition probs
             ri = np.random.random()    
-            if all(ps == 0.0) or (ri < disp):                 # dissipate
+            if all(ps == 0.0) or (ri < disp):                 # dissipate?
                 movement[ni] = -1
             else:
                 cps = np.cumsum(ps)
                 rnd = np.random.random() * cps[-1]
-                nj = np.searchsorted(cps, rnd)
+                nj = np.searchsorted(cps, rnd)                # choose an edge
                 movement[ni] = nj
+                whichblock[ni] = np.random.randint(0,len(nodestore[ni]),1)  # choose a block
 
         # then do a syncronous info-block move or dissipation. #
         for ni in xrange(n):
             nj = movement[ni]                          # the move destination
-            ib = np.random.choice(nodestore[ni],1)[0]  # we just generated one, so there has to be at least 1!
+            ib = nodestore[whichblock[ni]]
             if nj == -1:                               # dissipate a random block, put it in the dustbin
                 nodestore[ni].remove(ib)
                 #dustbin.append(ib)               # throw it in the dustbin  

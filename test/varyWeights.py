@@ -24,14 +24,32 @@ full run             : fullrun
 '''
 
 def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
+    except getopt.error, msg:
+        print msg
+        print "for help use --help"
+        sys.exit(2)
+    # process options
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            print __doc__
+            sys.exit(0)
+
+    print args
+
+    pathtomipdao = args[0]
+    graphname = args[1]
+    configname = args[2]
+    outputpath = args[3]
+    cpus = int(args[4])
+
     for i in xrange(21):
         print str(i)
-        graphname = "simgraph40.txt"
-        newgraph = "simgraph40_"+str(i)+".txt"
-        outname = "output_" + str(i) + ".txt"
-        configname = "config.txt"
+        newgraph = graphname +"_"+str(i)+".txt"
+        outname = outputpath+"output_" + str(i) + ".txt"
         printNetwork(graphname,newgraph)
-        theCmd = "ipython mipdao/pydev/main.py "+configname+ " " + newgraph + " > " + outname
+        theCmd = "ipython " + pathtomipdao + "main.py " +configname+ " " + newgraph + " > " + outname
         os.system(theCmd)
 
 
