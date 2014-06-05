@@ -164,9 +164,9 @@ def scoreSoln(soln, s, smat, nodes):
     if s["mode"] == "both":
         return(scoreBoth(s,lap,pts,lap_t,pst_t,wt))
     elif s["mode"] == "tx":
-        return(scoreTX(s,lap,pts,wt))
+        return(scoreTX(s,lap_t,pst_t,wt))
     elif s["mode"] == "rx":
-        return(scoreRX(s,lap_t,pst_t,wt))
+        return(scoreRX(s,lap,pts,wt))
     else:
         print "ScoreSoln Error! mode must be rx, tx, or both."
         sys.exit(1)

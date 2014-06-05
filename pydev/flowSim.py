@@ -59,21 +59,21 @@ def main():
     printLineGraph(state, nodes, sparseMat)
     
     # run the explicit flow
-    (rxhist,nstore) = flowtron2(state, sparseMat, nodes)
+    (rxhistory,nstore) = flowtron2(state, sparseMat, nodes)
      
     # some statistics on the flow
-    counts = processSim(rxhist, nstore)
-    txhist = counts[6]
-    rxhist = counts[7]
+    counts = processSim(rxhistory, nstore)
+    txhistory = counts[6]
+    rxhistory = counts[7]
     
     # output results ... did we find the solution? OR how much of it?
     # we should plot out graphs, and such.
     printResults(state, nodes, counts)
 
     # then search for the solution.
-    (score,soln,rxed,txed) = search(nodes, state, txhist, rxhist)
+    (score,soln,rxed,txed) = search(nodes, state, txhistory, rxhistory)
 
-    printRXTXTables(state, state["timesteps"], soln, rxhist, txhist)
+    printRXTXTables(state, state["timesteps"], soln, rxhistory, txhistory)
 
     wts = weightsum(nodes,soln)
     
