@@ -179,7 +179,7 @@ def runte(filename, fileout, yl, h, n, reps, cpus):
     fout.close()
 
 
-def edgelistTE(exprfile, genefile, edgefile, fileout, yl, start, end, reps, cpus):
+def edgelistTEBiDir(exprfile, genefile, edgefile, fileout, yl, start, end, reps, cpus):
     genes  = open(genefile,'r').read().strip().split("\n")
     dat    = open(exprfile,'r').read().strip().split("\n")
     dats   = map(lambda x: x.split("\t"), dat)
@@ -207,6 +207,34 @@ def edgelistTE(exprfile, genefile, edgefile, fileout, yl, start, end, reps, cpus
             sys.stderr.write("error at: " + str(marker) + "\t" + str(e) + "\t" + edgel1[e] + "\t" + edgel2[e] + "\n")
         marker +=1
     fout.close()
+
+
+def edgelistTE(exprfile, genefile, edgefile, fileout, yl, start, end, reps, cpus):
+    genes  = open(genefile,'r').read().strip().split("\n")
+    dat    = open(exprfile,'r').read().strip().split("\n")
+    dats   = map(lambda x: x.split("\t"), dat)
+    edge   = open(edgefile,'r').read().strip().split("\n")
+    edges  = map(lambda x: x.split("\t"), edge)
+    edgel1 = [x[0] for x in edges]
+    edgel2 = [x[1] for x in edges]
+    fout   = open(fileout,'w')
+    marker = 0
+    flag = 1
+    for e in xrange(len(edges)):
+        try:
+            i = genes.index(edgel1[e]) # from 
+            j = genes.index(edgel2[e]) # to
+            x = map(float,dats[i][start:end])
+            y = map(float,dats[j][start:end])
+            res0 = autoPermTE(x,y,yl,reps,cpus)
+            fout.write("forward"+"\t"+str(i)+"\t"+ str(j) +"\t"+ edgel1[e] +"\t"+ edgel2[e] + "\t" + "\t".join(map(str,res0))+"\n")
+            if marker % 17 == 0:
+                print str(marker) +"\t"+ str(i)+"\t"+ str(j) +"\t"+ edgel1[e] +"\t"+ edgel2[e] + "\t" + "\t".join(map(str,res0))
+        except:
+            sys.stderr.write("error at: " + str(marker) + "\t" + str(e) + "\t" + edgel1[e] + "\t" + edgel2[e] + "\n")
+        marker +=1
+    fout.close()
+
 
 #edgelistTE("../Max_Influence_Problem/Data/GRN/grn_expr_table.txt","../Max_Influence_Problem/Data/GRN/grn_gene_names.txt","../Max_Influence_Problem/Data/GRN/grn_yeastrac_edges.txt", "grn_weights.txt", 1, 1000, 4)
 

@@ -11,18 +11,29 @@ See the test dir for example files, but...
 The config file must look like:
 
 ---------------------------- (top of the file)
-number of restarts : 1
-number of ants     : 10
-converge threshold : 0.001
-local optimization : 1       (0 or 1)
-evaporation rate   : 0.3
-dampening          : 0.7
-alpha              : 1.0
-beta               : 1.0
-transmit threshold : 0.2     
-receive threshold  : 0.2     
-k                  : 1       (1 or more)
-parallel cpus      : 2       (1 or more)
+number of restarts   : 3
+number of ants       : 15
+converge threshold   : 0.0001
+local optimization   : 21
+evaporation rate     : 0.1
+dampening            : 0.99
+alpha                : 1.0
+beta                 : 1.0
+mode                 : tx
+optimize on          : score
+transmit threshold   : 0.0001
+receive threshold    : 0.0001
+k                    : 3
+cpus                 : 2
+lineGraph            : linegraph
+permutes             : 1000
+sim nodes            : 20
+sim edges            : 20
+sim degree power     : 1
+timesteps            : 1000
+disipate             : 0.01
+full run             : fullrun
+store                : 20
 
 
 The graph file must look like:
@@ -46,6 +57,36 @@ s	n	0.5
 s	o	0.5
 s	p	0.5
 s	q	0.5
+
+
+———————————————————————————————
+
+Explaination of the configuration options
+
+number of restarts   : 3           # number of optimizations done
+number of ants       : 15          # ants per optimization
+converge threshold   : 0.0001      # when to call it converged
+local optimization   : 21          # number of hill climbing steps 
+evaporation rate     : 0.1         # the optimization rate
+dampening            : 0.99        # dampening on transition probabilities
+alpha                : 1.0         # emphasis on edge weights
+beta                 : 1.0         # emphasis on pheromone weights
+mode                 : tx          # tx - transmit, rx - receive, both = tx + rx
+optimize on          : score       # score = nodes touched + solution set weights
+transmit threshold   : 0.0001      # threshold to call a node “touched”
+receive threshold    : 0.0001      # threshold to call a node “touched”
+k                    : 3           # solution set size
+cpus                 : 2           # number of cpus to use in parallel
+lineGraph            : linegraph   # line graph mode, or regular mode
+permutes             : 1000        # if performing random solution permutations     
+sim nodes            : 20          # if generating a random network
+sim edges            : 20          # for random networks
+sim degree power     : 1           # for random networks
+timesteps            : 1000        # number of simulated time steps
+disipate             : 0.01        # chance that information dissipates
+full run             : fullrun     # do ant optimization after the simulation?
+store                : 20          # size of the node info-store
+
 
 
 

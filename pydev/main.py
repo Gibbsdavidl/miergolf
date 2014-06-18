@@ -50,7 +50,7 @@ def main():
 
 def printResults(state,nodes):
     wts = weightsum(nodes, state["bestEver"][2])
-    print ("Config\tGraph\tType\tOptimTo\tMode\tNodes\tAnts\tTx\tRx\tDamp\tLocal\tScore\tTouch\tSoln\tWt")
+    print ("Config\tGraph\tType\tOptimTo\tMode\tNodes\tAnts\tTx\tRx\tDamp\tLocal\tScore\tTouch\tSoln\tWt\tNodes")
     print ( str(state["config"]) +"\t"+
             str(state["graphfile"]) +"\t"+
             str(state["lineGraph"]) +"\t"+
@@ -65,7 +65,9 @@ def printResults(state,nodes):
             str(state["bestEver"][0]) +"\t"+
             str(state["bestEver"][1]) +"\t"+
             str(state["bestEver"][2]) +"\t"+
-            str(wts))
+            str(wts) +"\t"+
+            ":".join([nodes[i][0]+"-"+nodes[i][1] for i in state["bestEver"][2]])
+    )
 
                         
 
