@@ -1,29 +1,9 @@
 '''
-number of restarts   : 3
-number of ants       : 20
-converge threshold   : 0.0001
-local optimization   : 21
-evaporation rate     : 0.1
-dampening            : 0.99
-alpha                : 1.0
-beta                 : 1.0
-mode                 : both
-optimize on          : touch
-transmit threshold   : 0.000001
-receive threshold    : 0.000001
-k                    : 4
-cpus                 : 4
-lineGraph            : linegraph
-permutes             : 1000
-sim nodes            : 15
-sim edges            : 15
-sim degree power     : 6
-timesteps            : 1000
-disipate             : 0.1
-full run             : fullrun
+A script to automate running the ant optimization with many Ks.
+This allows one to find the optimal K, in relation to network influence.
 '''
 
-
+# Run as:  ipython mipdao/utils/varyK.py  path_to_mipdao  name_of_graph_file  path_to_write_to  number_of_cpus
 
 def main():
     try:
