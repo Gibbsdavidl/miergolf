@@ -173,8 +173,26 @@ def scoreSoln(soln, s, smat, nodes):
 
 
 def scoreBoth(s,lap,pts,lap_t,pst_t,wt):
-    f = lin.spsolve(lap, pts) 
-    h = lin.spsolve(lap_t, pst_t)
+    try:
+        f = lin.spsolve(lap, pts) 
+        h = lin.spsolve(lap_t, pst_t)
+    except:
+        # a singular matrix ... must solve each vector separately
+        vecs = pts.shape[1]
+        #print(vecs)
+        fsolns = []
+        hsolns = []
+        for i in range(vecs):
+            pts2   = pts[:,i].todense()
+            pst_t2 = pst_t[:,i].todense()
+            f1 = lin.bicgstab(lap, pts2)[0]
+            h1 = lin.bicgstab(lap_t, pst_t2)[0]
+            fsolns.append(f1)
+            hsolns.append(h1)
+        f = np.matrix(fsolns)
+        h = np.matrix(hsolns)
+        f = f.transpose()
+        h = h.transpose()
     if type(f) == type(np.array([])): # came back as an array
         fh = f+h
         score = fh.sum()
@@ -200,7 +218,19 @@ def scoreRX(s,lap,pts,wt):
 
 
 def scoreTX(s, lap_t, pst_t, wt):
-    h = lin.spsolve(lap_t, pst_t)
+    try:
+        h = lin.spsolve(lap_t, pst_t)
+    except:
+        # a singular matrix ... must solve each vector separately
+        vecs = pts.shape[1]
+        #print(vecs)
+        hsolns = []
+        for i in range(vecs):
+            pst_t2 = pst_t[:,i].todense()
+            h1 = lin.bicgstab(lap_t, pst_t2)[0]
+            hsolns.append(h1)
+        h = np.matrix(hsolns)
+        h = h.transpose()    
     if type(h) == type(np.array([])): # came back as an array
         htouch = sum(h > s["tx"])
     else: # came back as a sparse matrix

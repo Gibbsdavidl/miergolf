@@ -25,8 +25,8 @@ def main():
     outputpath = args[2]
     cpus = int(args[3])
 
-    for k in [1,2,3,4,5,6,7,8]:
-        for i in xrange(3):
+    for k in [1,2,3,4,5,6,7,8,10,12,14]:
+        for i in xrange(5):
             print "K: " + str(k) + "   " + str(i)
             outname = outputpath + "_varyK_output_" + str(k) + "_" + str(i) + ".txt"
             configname = outputpath + "_varyK_config_"+ str(k) + "_" + str(i) + ".txt"
@@ -39,11 +39,11 @@ def main():
 def printConfig(filename, k, cpus, nodes):
     fout = open(filename,'w')
     steps = nodes * 2000
-    fout.write("number of restarts   : 3\n")
-    fout.write("number of ants       : 18\n")
+    fout.write("number of restarts   : 2\n")
+    fout.write("number of ants       : 12\n")
     fout.write("converge threshold   : 0.0001\n")
-    fout.write("local optimization   : 20\n")
-    fout.write("evaporation rate     : 0.1\n")
+    fout.write("local optimization   : 8\n")
+    fout.write("evaporation rate     : 0.3\n")
     fout.write("dampening            : 0.99\n")
     fout.write("alpha                : 1.0\n")
     fout.write("beta                 : 1.0\n")

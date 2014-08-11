@@ -133,7 +133,7 @@ idx <- sapply(1:11, function(a) rep(a,chunk), simplify=F)
 idx[[12]] <- rep(12,nhaepic-(11*chunk))
 netl <- split(haepic, as.factor(unlist(idx)))
 
-placenta <- read.table("B_MRGE_Placenta_Related_NB____.txt")
+placenta <- read.table("pheno/B_MRGE_Placenta_Related_NB____.txt")
 placenta <- placenta[,2]
 
 x <- foreach(i=1:12, .combine='rbind') %dopar% epinet(netl[[i]], dat, placenta, grp, 1)
@@ -144,9 +144,11 @@ library(doParallel)
 library(foreach)
 library(iterators)
 
-registerDoParallel(cores=12)
+cs <- 12
 
-load("groups.rda")
+registerDoParallel(cores=cs)
+
+load("groups_admix4.rda")
 
 dat <- read.table(gzfile("haepic_data.txt.gz"), header=T, stringsAsFactors=F)
 dat <- dat[dat$MAF > 0.01,]
@@ -156,15 +158,25 @@ dat$MAF[bigmaf] <- 1-dat$MAF[bigmaf]
 haepic <- read.table("haepic_genes-regulate-genes.txt", stringsAsFactors=F)
 
 nhaepic <- nrow(haepic)
-chunk <- floor(13286/12)
-idx <- sapply(1:11, function(a) rep(a,chunk), simplify=F)
-idx[[16]] <- rep(12,nhaepic-(11*chunk))
+chunk <- floor(nhaepic/cs)
+idx <- sapply(1:(cs-1), function(a) rep(a,chunk), simplify=F)
+idx[[cs]] <- rep(cs, nhaepic-((cs-1)*chunk))
 netl <- split(haepic, as.factor(unlist(idx)))
 
-eclampsia <- read.table("B_CLIN_Preeclampsia_Eclampsia_M____.txt")
+eclampsia <- read.table("pheno/B_CLIN_Preeclampsia_Eclampsia_M____.txt")
 eclampsia <- eclampsia[,2]
 
-x <- foreach(i=1:12, .combine='rbind') %dopar% epinet(netl[[i]], dat, eclampsia, grp, 1)
+x <- foreach(i=1:cs, .combine='rbind') %dopar% epinet(netl[[i]], dat, eclampsia, admixMgrp, 1)
 
 
 ####################################
+admix <- read.table("df4_admix4.txt")
+library(stringr)
+midx <- str_detect(admix$V1, pattern="-M")
+madmix <-admix[midx,]
+
+admixMgrp <- c()
+for (i in 1:nrow(madmix)) {
+    admixMgrp <- c(admixMgrp, which(as.numeric(madmix[i,-1]) == max(as.numeric(madmix[i,-1])))[1])
+}
+
