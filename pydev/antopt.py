@@ -222,8 +222,7 @@ def scoreTX(s, lap_t, pst_t, wt):
         h = lin.spsolve(lap_t, pst_t)
     except:
         # a singular matrix ... must solve each vector separately
-        vecs = pts.shape[1]
-        #print(vecs)
+        vecs = pst_t.shape[1]
         hsolns = []
         for i in range(vecs):
             pst_t2 = pst_t[:,i].todense()
