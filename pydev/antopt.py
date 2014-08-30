@@ -179,6 +179,7 @@ def scoreBoth(s,lap,pts,lap_t,pst_t,wt):
     except:
         # a singular matrix ... must solve each vector separately
         vecs = pts.shape[1]
+        vlen = pts.shape[0]
         #print(vecs)
         fsolns = []
         hsolns = []
