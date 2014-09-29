@@ -112,7 +112,7 @@ def localSearch(s, ps, bestSoln, sparseMat, nodes):
         n = s["local"] # the number of tries to make
         testsoln = list(newSoln)
         for i in xrange(n):
-            remr  = np.random.choice(testsoln,1)[0]        # the one to remove
+            remr  = testsoln[np.random.randint(0,len(testsoln),1)]        # the one to remove
             solnr = [xi for xi in testsoln if xi != remr]  # fragment list
             solni = testsoln[0];                           # pick a new one, not in the list already
             while solni in testsoln:
