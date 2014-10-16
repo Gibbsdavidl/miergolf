@@ -1,9 +1,12 @@
-The maximum influnce problem using diffusion models on directed graphs, subset solution by ant optimization.
+miergolf (antwave in dutch)
+
+The influence maximization problem using a absorbing state Markov chain diffusion model on directed graphs, 
+and optimized using the min-max ant optimization algorithm.
 -------------------------------------------------------------------------------------------------------------
 Author: David L Gibbs
 -------------------------------------------------------------------------------------------------------------
 
-This software has been reimplemented in python, to take advantage of the sparse matrix libraries.
+This software has been implemented in python, taking advantage of the sparse matrix libraries in scipy.
 
 To run this program:  python main.py config1.txt graphfile.txt
 
