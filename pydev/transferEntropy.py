@@ -7,13 +7,13 @@ from math import log, sqrt, exp, pi
 import itertools as it
 from scipy.stats import gaussian_kde
 
-# In this work, I am computing information theoretic values
+# In this work, I am computing transfer entropies
 # by, first, discretizing expression values into a given
 # number of bins. Using those bins, the probability of a given
 # interval is computed, and the joint probability over time 
 # can also be computed (given two time series).
 
-# Want  P(X_t+1, Y_k1, X_k2) * log (P(X_t+1,Y_k1,X_k2)*P(X_t+1)) / (P(X_t+1, X_k2)*P(X_k2,Y_K1))
+# Want P(X_t+1, X_k2, Y_k1) * log (P(X_t+1,Y_k1,X_k2)*P(X_t+1)) / (P(X_t+1, X_k2)*P(X_k2,Y_K1))
 
 # just get the joint, then get the others by marginalization
 
@@ -23,6 +23,9 @@ from scipy.stats import gaussian_kde
 # yl: the time delay for y
 # xl: the time delay for x
 # b : the number of bins
+
+# autoTE is
+# FOR TE (Y -> X)
 
 def safelog(x):
     if (x > 0.0):
@@ -95,8 +98,8 @@ def kernelTE (y, x, yl, h, n):
         l.append([x[z] for z in kidx]+[y[lidx]])
     lpdf = gaussian_kde(safevec(l), h)
     (grid,idx) = makegrid(n)         # 3D grid of coordinates
-    lprobs  = lpdf(grid)          # these are density estimates
-    lprobs  = lprobs/sum(lprobs) # normalize to probabiliies
+    lprobs  = lpdf(grid)             # these are density estimates
+    lprobs  = lprobs/sum(lprobs)     # normalize to probabiliies
     marprobs = marginalize(n, idx, lprobs)  # marginalized prob
     te = computeTE(n, marprobs)
     return(te)
