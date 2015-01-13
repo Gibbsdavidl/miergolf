@@ -281,7 +281,7 @@ def laglistTE(exprfile, genefile, lagedgesfile, fileout, start, end, reps, cpus)
     genes  = open(genefile,'r').read().strip().split("\n")
     dat    = open(exprfile,'r').read().strip().split("\n")
     dats   = map(lambda x: x.split("\t"), dat)
-    edge   = open(lagedgefile,'r').read().strip().split("\n")
+    edge   = open(lagedgesfile,'r').read().strip().split("\n")
     edges  = map(lambda x: x.split("\t"), edge)
     edgel1 = [x[0] for x in edges]
     edgel2 = [x[1] for x in edges]
