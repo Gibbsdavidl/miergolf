@@ -293,7 +293,7 @@ def laglistTE(exprfile, genefile, lagedgesfile, fileout, start, end, reps, cpus)
         try:
             i = genes.index(edgel1[e]) # from
             j = genes.index(edgel2[e]) # to
-            yl = genes.index(laggy[e]) # how much lag
+            yl = (laggy[e]) # how much lag
             x = map(float,dats[i][start:end])
             y = map(float,dats[j][start:end])
             res0 = autoPermTE(x,y,yl,reps,cpus)
