@@ -25,13 +25,13 @@ def main():
     outputpath = args[2]
     cpus = int(args[3])
 
-    for k in [1,2,3,4,5,6,7,8]:
+    for k in range(1,16):
         for i in xrange(3):
             print "K: " + str(k) + "   " + str(i)
             outname = outputpath + "varyK_output_" + str(k) + "_" + str(i) + ".txt"
             configname = outputpath + "varyK_config_"+ str(k) + "_" + str(i) + ".txt"
             printConfig(configname, k, cpus, 0)
-            theCmd = "ipython " + pathtomipdao + "pydev/main.py "+configname+ " " + graphname + " > " + outname
+            theCmd = "ipython " + pathtomipdao + "src/main.py "+configname+ " " + graphname + " > " + outname
             os.system(theCmd)
 
 
@@ -39,21 +39,21 @@ def main():
 def printConfig(filename, k, cpus, nodes):
     fout = open(filename,'w')
     steps = nodes * 2000
-    fout.write("number of restarts   : 10\n")
+    fout.write("number of restarts   : 3\n")
     fout.write("number of ants       : 16\n")
     fout.write("converge threshold   : 0.0001\n")
-    fout.write("local optimization   : 24\n")
+    fout.write("local optimization   : 16\n")
     fout.write("evaporation rate     : 0.2\n")
     fout.write("dampening            : 0.99\n")
     fout.write("alpha                : 1.0\n")
     fout.write("beta                 : 1.0\n")
-    fout.write("mode                 : both\n")
+    fout.write("mode                 : tx\n")
     fout.write("optimize on          : score\n")
     fout.write("transmit threshold   : 0.0001\n")
     fout.write("receive threshold    : 0.0001\n")
     fout.write("k                    : "+ str(k) + "\n")
     fout.write("cpus                 : "+str(cpus)+"\n")
-    fout.write("lineGraph            : linegraph\n")
+    fout.write("lineGraph            : regular\n")
     fout.write("permutes             : 1000\n")
     fout.write("sim nodes            : "+str(nodes)+"\n")
     fout.write("sim edges            : 0\n")
