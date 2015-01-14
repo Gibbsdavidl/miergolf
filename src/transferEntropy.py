@@ -360,3 +360,8 @@ y=[8.177953,  8.337438,  8.460188,  8.207932,  8.832201,  8.363152,  8.398193,  
    9.302837,  9.514659,  9.122192,  9.247045,  8.989483,  9.497320,  9.589326,  9.791079, 10.291129, 10.004832,  9.857048, 10.287642, 10.416445,  9.225077]
 
 
+laglistTE("/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/Eser_Averaged_Expression.txt",
+          "/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/genesymbols.csv",
+          "/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/small_edge_list.txt",
+          "/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/small_results.txt",
+          0, 42, 100, 1)
