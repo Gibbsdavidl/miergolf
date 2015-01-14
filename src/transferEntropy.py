@@ -297,9 +297,10 @@ def laglistTE(exprfile, genefile, lagedgesfile, fileout, start, end, reps, cpus)
             x = map(float,dats[i][start:end])
             y = map(float,dats[j][start:end])
             res0 = autoPermTE(x,y,yl,reps,cpus)
-            fout.write("forward"+"\t"+str(i)+"\t"+ str(j) +"\t"+ edgel1[e] +"\t"+ edgel2[e] +"\t" + str(bestlag) +"\t"+ "\t".join(map(str,res0))+"\n")
+            print(str(res0))
+            fout.write("forward"+"\t"+str(i)+"\t"+ str(j) +"\t"+ edgel1[e] +"\t"+ edgel2[e] +"\t" + str(yl) +"\t"+ "\t".join(map(str,res0))+"\n")
             if marker % 17 == 0:
-                print str(marker) +"\t"+ str(i)+"\t"+ str(j) +"\t"+ edgel1[e] +"\t"+ edgel2[e] +"\t" + str(bestlag) +"\t"+ "\t".join(map(str,res0))
+                print str(marker) +"\t"+ str(i)+"\t"+ str(j) +"\t"+ edgel1[e] +"\t"+ edgel2[e] +"\t" + str(yl) +"\t"+ "\t".join(map(str,res0))
         except:
             sys.stderr.write("error at: " + str(marker) + "\t" + str(e) + "\t" + edgel1[e] + "\t" + edgel2[e] + "\n")
         marker +=1
