@@ -339,6 +339,18 @@ def edgelistTElagRange(exprfile, genefile, edgefile, fileout, ylmax, start, end,
     fout.close()
 
 
+def paramSweep(x,y):
+    x = map(float,x)
+    y = map(float,y)
+    for g in range(5, 50, 5):
+        for l in range(0,16):
+            try:
+                res0 = autoTE(x,y,l,g)
+                print(str(g) +"\t"+ str(l) +"\t"+ str(res0))
+            except:
+                sys.stderr.write("error at: " + str(g) + "\t" + str(l) + "\n")
+
+
 #forward	1025	1535	ACE2	BMH1	8	0.00509469519606	0.0410603541254	0.022660898014	-1.58712416901	18.0	1.0
 #forward	1025	1910	ACE2	BUD9	4	0.400446640752	0.0166262164103	0.00628134427359	61.1048220929	0	0
 #forward	1025	5183	ACE2	CDC6	2	0.301548888897	0.0421773756873	0.0153413053307	16.9067434366	0	0
@@ -361,9 +373,14 @@ y=[8.177953,  8.337438,  8.460188,  8.207932,  8.832201,  8.363152,  8.398193,  
    9.302837,  9.514659,  9.122192,  9.247045,  8.989483,  9.497320,  9.589326,  9.791079, 10.291129, 10.004832,  9.857048, 10.287642, 10.416445,  9.225077]
 
 
+paramSweep(x,y)
+
 #laglistTE("/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/Eser_Averaged_Expression.txt",
 #          "/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/genesymbols.csv",
 #          "/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/small_edge_list.txt",
 #          "/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/small_results.txt",
 #          0, 42, 100, 1)
 
+
+
+# edgelistTElagRange("Eser_Averaged_Expression.txt","genesymbols.csv","Edges_w_Extra_TFs_Dec4_2014.txt", "New_Lag_Results.txt", 5, 0, 42, 2000, 10)
