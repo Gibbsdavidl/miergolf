@@ -140,24 +140,24 @@ def autoTE (y, x, yl, n):
     return(te)
 
 
-def sumLagTE(y,x,yl,n):
+def sumLagTE(y,x,yl,n, fromProcess):
     res0 = 0.0
-    for yl in range(1,(yl+1)):
-        res0 += autoTE(y,x,yl,n)
+    for yli in range(1,(yl+1)):
+        res0 += autoTE(y,x,yli,n)
     return(res0)
 
 
 def autoshuff((y,x,yl,n)):
-    permutedA = deepcopy(x)
-    shuffle(permutedA)
-    return(sumLagTE(y,permutedA,yl,n))
+    permutedY = deepcopy(y)
+    shuffle(permutedY)
+    return(sumLagTE(permutedY,x,yl,n,"perm"))
 
 
 def autoPerm(y,x,yl,n,p,cpus):
     # autoTE is
     # FOR TE (Y -> X)
     pool = mp.Pool(cpus)
-    observedTE = sumLagTE(y,x,yl,n)
+    observedTE = sumLagTE(y,x,yl,n,"obs")
     permutedList = it.repeat( (y,x,yl,n), p)
     permutedTE = pool.map(autoshuff, permutedList)
     pool.close()
@@ -210,60 +210,55 @@ def summedTELag(exprfile, genefile, edgefile1, fileout, gridsize, ylmax, reps1, 
     fout.close()
 
 
-pref = "/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Data/"
-ef1 = pref+"Edges_w_Extra_TFs_Dec4_2014.txt"
-ef2 = pref+"Edges_w_Extra_TFs_Dec4_2014.txt"
-genes = pref+"yeast_array_genesymbols.csv"
-gexpr = pref+"Eser_Averaged_Expression.txt"
-tout = "/Users/davidgibbs/Desktop/test.txt"
-summedTELag(gexpr, genes, ef1, tout, 10, 8, 3, 20, 0.05, 2)
+def summedTELagGG(exprfile, genefile, edgefile1, fileout, gridsize, ylmax, reps1, reps2, thresh1, g1, g2, cpus):
+    genes  = open(genefile,'r').read().strip().split("\n")
+    dat    = open(exprfile,'r').read().strip().split("\n")
+    dats   = map(lambda x: x.split("\t"), dat)
+    fout   = open(fileout,'w')
+
+    #for e in xrange(len(edgeFrom)):
+    for e in xrange(10):
+        print(e)
+        (fromy,tox) = prepGeneData(dats, genes, edgeFrom, edgeTo, e)
+        # build list of TEs
+        try:
+            res0 = autoPerm(fromy,tox,ylmax,gridsize,reps1,cpus)
+            # get number of perms greater than observed
+            t = sum([a > res0[0] for a in res0[1:]]) / float(reps1)
+            if (t < thresh1):
+                # if there's fewer than our thresh CONTINUE with more perms
+                res1 = autoPerm(fromy,tox,ylmax,gridsize,reps2,cpus)
+                t = sum([a > res1[0] for a in res1[1:]]) / float(reps2)
+                if (t < thresh1):
+                    fout.write(str(edgeFrom[e]) +"\t"+ str(edgeTo[e]) +"\t"+ "\t".join(map(str,res1)) +"\n")
+        except:
+            sys.stderr.write("error at " + "\t".join([str(e), edgeFrom[e], edgeTo[e]]) + "\n")
+    fout.close()
 
 
-
-#  step 1: small number of perms
-#       2: if number of perms is higher
-#       3:    do more terms
-
-
-
-
-
-
-
-
-
-
-
-#forward	1025	1535	ACE2	BMH1	8	0.00509469519606	0.0410603541254	0.022660898014	-1.58712416901	18.0	1.0
-#forward	1025	1910	ACE2	BUD9	4	0.400446640752	0.0166262164103	0.00628134427359	61.1048220929	0	0
-#forward	1025	5183	ACE2	CDC6	2	0.301548888897	0.0421773756873	0.0153413053307	16.9067434366	0	0
-
-#edgelistTElagRange("../Max_Influence_Problem/Data/GRN/grn_expr_table.txt","../Max_Influence_Problem/Data/GRN/grn_gene_names.txt","../Max_Influence_Problem/Data/GRN/grn_yeastrac_edges.txt", "grn_weights.txt", 1, 1000, 4)
-
-#edgelistTE("../Max_Influence_Problem/Data/GRN/grn_expr_table.txt","../Max_Influence_Problem/Data/GRN/grn_gene_names.txt","../Max_Influence_Problem/Data/GRN/grn_yeastrac_edges.txt", "grn_weights_lag2_cutat28", 2, 28, 1000, 3)
-
-#edgelistTE("grn_expr_table.txt","grn_gene_names.txt","grn_yeastrac_edges.txt", "grn_weights_lag2_full", 2, 41, 1000, 8)
+def main(argv):
+    exprfile = argv[1]
+    genefile = argv[2]
+    edgefile1 = argv[3]
+    fileout  =  argv[4]
+    gridsize = int(argv[5])
+    ylmax    = int(argv[6])
+    reps1    = int(argv[7])
+    thresh1  = int(argv[8])
+    g1 =       argv[9]
+    g2 =       argv[10]
+    cpus =     int(argv[11])
+    summedTELagGG(exprfile, genefile, edgefile1, fileout, gridsize, ylmax, reps1, reps2, thresh1, g1, g2, cpus)
 
 
-#edgelistTE("Data/exprmat.csv","Data/genesymbols.csv","Data/Eser_Paper_SI/edgesToTest.tsv", "EserWeights", 2, 2, 41, 2000, 4)
-
-x=[ 10.783598,  9.327544,  8.879752 , 9.127505,  9.159929 , 9.214980 , 9.190469 , 9.438197,  9.229540 , 9.975117, 10.302772, 11.134553, 11.125216, 11.139961,
-    10.927145, 10.975110, 10.705192, 10.398936, 10.341666, 10.513413, 10.471136, 10.934537, 11.109571, 11.372016, 11.376848, 11.265910, 11.082069, 11.123436,
-    10.576115, 10.717450, 10.342657, 10.196068, 10.167991, 10.627770, 10.810851, 10.707537, 10.623126, 10.678473, 10.480142, 10.374172, 10.264492, 10.872016]
-
-y=[8.177953,  8.337438,  8.460188,  8.207932,  8.832201,  8.363152,  8.398193,  8.247786,  8.818389,  9.271919,  9.769506,  9.912917, 10.042233,  9.674573,
-   9.777879,  9.119085,  8.963061,  8.841799,  8.984359,  8.626832,  9.065240,  9.018956,  9.532496,  9.652034,  9.515809,  9.819796,  9.647349,  9.075306,
-   9.302837,  9.514659,  9.122192,  9.247045,  8.989483,  9.497320,  9.589326,  9.791079, 10.291129, 10.004832,  9.857048, 10.287642, 10.416445,  9.225077]
+if __name__ == "__main__":
+   main(sys.argv)
 
 
-#paramSweep(x,y)
-
-#laglistTE("/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/Eser_Averaged_Expression.txt",
-#          "/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/genesymbols.csv",
-#          "/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/small_edge_list.txt",
-#          "/Volumes/YosemiteToast/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/Results/Yeast/new/small_results.txt",
-#          0, 42, 100, 1)
-
-
-
-# edgelistTElagRange("Eser_Averaged_Expression.txt","genesymbols.csv","Edges_w_Extra_TFs_Dec4_2014.txt", "New_Lag_Results.txt", 5, 0, 42, 2000, 10)
+#pref = "/Users/davidgibbs/Dropbox/Research/Projects/Influence_Maximization_Problem/EserData/"
+#ef1 = pref+"Edges_w_Extra_TFs_Dec4_2014.txt"
+#ef2 = pref+"Edges_w_Extra_TFs_Dec4_2014.txt"
+#genes = pref+"yeast_array_genesymbols.csv"
+#gexpr = pref+"Eser_Averaged_Expression.txt"
+#tout = "/Users/davidgibbs/Desktop/test.txt"
+#summedTELag(gexpr, genes, ef1, tout, 10, 8, 3, 20, 0.05, 2)
