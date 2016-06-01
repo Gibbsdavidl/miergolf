@@ -14,12 +14,12 @@ To see how the data was preprocessed, see Data_Prep.R
 
 =========================================================================================
 The data dir contains:
-Eser_Averaged_Expression.txt.gz	  # the expression data used, avg of two runs
-Yeastmine_edges_plus_additionals.txt.gz	 # the edges tested
+Eser_Averaged_Expression.txt.gz	              # the expression data used, avg of two runs
+Yeastmine_edges_plus_additionals.txt.gz	      # the edges tested
 Yeastmine_edges_shortlist_for_testing.txt.gz	# a short list of edges, for testing
-ant_config.txt	# an example ant-config file
-yeast_array_genesymbols.csv.gz # the gene symbols for each row of the expression data
-yeastmine_signif_SLTE_edges.net  # the resulting network with weighted edges.
+ant_config.txt	                              # an example ant-config file
+yeast_array_genesymbols.csv.gz                # the gene symbols for each row of the expression data
+yeastmine_signif_SLTE_edges.net               # the resulting network with weighted edges.
 
 ==========================================================================================
 See the test dir for example files, but...
