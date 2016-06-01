@@ -22,30 +22,28 @@ def main():
 
     print args
 
-    path_to_miergolf = args[0]
+    pathtomipdao = args[0]
     graphname = args[1]
     outputpath = args[2]
     cpus = int(args[3])
 
-
-	# EDIT THE RANGE OF K HERE #
-    for k in range(1,35):
+    for k in range(35,50):
         for i in range(1,3):
             print "K: " + str(k) + "   " + str(i)
             outname = outputpath + "varyK_output_" + str(k) + "_" + str(i) + ".txt"
             configname = outputpath + "varyK_config_"+ str(k) + "_" + str(i) + ".txt"
             printConfig(configname, k, cpus, 0)
-            theCmd = "ipython " + path_to_miergolf + "src/main.py "+configname+ " " + graphname + " > " + outname
+            theCmd = "ipython " + pathtomipdao + "src/main.py "+configname+ " " + graphname + " > " + outname
             os.system(theCmd)
 
 
 def printConfig(filename, k, cpus, nodes):
     fout = open(filename,'w')
     steps = nodes * 2000
-    fout.write("number of restarts   : 16\n")
+    fout.write("number of restarts   : 8\n")
     fout.write("number of ants       : 64\n")
     fout.write("converge threshold   : 0.0001\n")
-    fout.write("local optimization   : 32\n")
+    fout.write("local optimization   : 16\n")
     fout.write("evaporation rate     : 0.2\n")
     fout.write("dampening            : 0.9999\n")
     fout.write("alpha                : 1.0\n")

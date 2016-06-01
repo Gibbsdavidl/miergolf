@@ -1,0 +1,98 @@
+==================
+Generating Results
+==================
+
+----------------------
+Computing edge weights
+----------------------
+
+The first step involves computing sum-lag-transfer-entropy weights for the
+edges, and permutation testing the weights.
+
+Computing weights without permutation testing:
+
+(after changing directory into miergolf)
+
+python src/TESum.py data/Eser_Averaged_Expression.txt.gz data/yeast_array_genesymbols.csv.gz data/Yeastmine_shortlist.txt.gz testout.txt 10 6 3 10 0.1 ABF1 BET2 2
+
+This script takes the following parameters:
+exprfile = the expression data, samples in columns
+genefile = the gene names for each row
+edgefile1 = the list of edges, as tab separated genes
+fileout  =  name of the output file
+gridsize = 10 works well
+ylmax    = in the paper, set as 6
+reps1    = First cut, number of permutations ... get rid of insignficant edges early.
+reps2    = Used number of permuations. In the paper 50,000.
+thresh1  = Transfer entropy must be above this value.
+g1 =       gene name one
+g2 =       gene name two
+cpus =     ants in parallel
+
+The output:
+
+g1      g2      robustDist      observedTE      permuted TE 1   permuted TE 2   permuted TE 3    ...
+ABF1	BET2	3.85778447514	1.27504986326	0.743789335983	0.743789335983	0.614501119523	0.614501119523	0.49904265996 ...
+
+----------------
+Permutation Test
+----------------
+
+In each result line, column 5 to the end are SLTE values from permuted data.
+
+Edges were accepted if sum(res0[5:ncol(res0)]) / (ncol(res0)+1) < 1 / ncol(res0)
+
+------------------------------------------
+Solving the Influence Maximization Problem
+------------------------------------------
+
+With the output of SLTE, as above, we should have a file formated "gene_A \t geneB \t SLTE \n".
+I have saved this weighted network file as "data/yeastmine_signif_te.net".
+
+Then, for a given value of K (the set size), we run:
+
+python src/main.py data/ant_config.txt data/yeastmine_signif_te.net
+
+This produces results for a single value of K (the set size).
+
+The results look like:
+Config	Graph	Type	OptimTo	Mode	Nodes	Ants	Tx	Rx	Damp	Local	Score	Touch	Soln	Wt	Nodes
+data/ant_config.txt	data/yeastmine_signif_te.net	regular	score	tx	1147	32	0.0001	0.0001	0.99	4	429.633310502	425	[313, 475, 341]	4.63331050242	FKH1-FKH1:GCN5-GCN5:RFX1-RFX1
+
+
+Config	The configuration file
+Graph	The graph file name
+Type	The graph type (regular or a line graph)
+OptimTo	Value to use for optimization (The ant's score).
+Mode	Can be transmit (tx), recieve (rx), or both .... only used Tx here.
+Nodes	Number of nodes in the graph
+Ants	Number of ants used
+Tx	    Transmit threshold, to be counted for graph coverage
+Rx	    Rx threshold, to be counted for graph coverage
+Damp	Dampening on the graph weights.
+Local	Number of steps of local optimization. 24 is a good selection.
+Score	The resulting optimized score
+Touch	Number of nodes touched, or the graph cover
+Soln	The numerical index of nodes used in the solution.
+Wt	    The sum of edge weights
+Nodes   The node names used in the optimized solution.
+
+
+-------------------
+Automating the runs
+-------------------
+
+If you want to automatically run on a range of K values, use the utils/varyK.py script.
+
+arguments to this script are:
+path_to_miergolf = args[0]
+graphname = args[1]
+outputpath = args[2]
+cpus = int(args[3])
+
+Run it like:
+python utils/varyK.py path/to/miergolf data/yeastmine_signif_te.net output/path/ 4
+
+---------------------
+That's it!
+_____________________
