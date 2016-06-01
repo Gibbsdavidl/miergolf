@@ -9,11 +9,44 @@ Author: David L Gibbs
 
 This software has been implemented in python, taking advantage of the sparse matrix libraries in scipy.
 
-To run this program:  python miergolf/src/main.py config1.txt graphfile.txt
+To run this program, see the instructions in GENERATING_RESULTS.txt
+To see how the data was preprocessed, see Data_Prep.R
 
+=========================================================================================
+The data dir contains:
+Eser_Averaged_Expression.txt.gz	  # the expression data used, avg of two runs
+Yeastmine_edges_plus_additionals.txt.gz	 # the edges tested
+Yeastmine_edges_shortlist_for_testing.txt.gz	# a short list of edges, for testing
+ant_config.txt	# an example ant-config file
+yeast_array_genesymbols.csv.gz # the gene symbols for each row of the expression data
+yeastmine_signif_SLTE_edges.net  # the resulting network with weighted edges.
+
+==========================================================================================
 See the test dir for example files, but...
-The config file must look like:
+The graph file must look like:
+(from) [tab] (to) [tab] (weight)
+----------------(top of file)
+a	i	0.5
+b	i	0.5
+c	i	0.5
+d	i	0.5
+i	j	0.99
+j	e	0.5
+j	f	0.5
+j	g	0.5
+j	h	0.5
+h	r	0.5
+k	r	0.5
+l	r	0.5
+m	r	0.5
+r	s	0.99
+s	n	0.5
+s	o	0.5
+s	p	0.5
+s	q	0.5
 
+
+The config file must look like:
 ---------------------------- (top of the file)
 number of restarts   : 3
 number of ants       : 15
@@ -39,28 +72,6 @@ disipate             : 0.01
 full run             : fullrun
 store                : 20
 
-
-The graph file must look like:
-(from) [tab] (to) [tab] (weight)
-----------------(top of file)
-a	i	0.5
-b	i	0.5
-c	i	0.5
-d	i	0.5
-i	j	0.99
-j	e	0.5
-j	f	0.5
-j	g	0.5
-j	h	0.5
-h	r	0.5
-k	r	0.5
-l	r	0.5
-m	r	0.5
-r	s	0.99
-s	n	0.5
-s	o	0.5
-s	p	0.5
-s	q	0.5
 
 
 ———————————————————————————————
@@ -90,8 +101,4 @@ timesteps            : 1000        # number of simulated time steps
 disipate             : 0.01        # chance that information dissipates
 full run             : fullrun     # do ant optimization after the simulation?
 store                : 20          # size of the node info-store
-
-
-
-
 -------------------------------------------------------------------------------------------------------------
