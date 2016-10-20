@@ -6,6 +6,7 @@ This allows one to find the optimal K, in relation to network influence.
 # Run as:  ipython mipdao/utils/varyK.py  path_to_mipdao  name_of_graph_file  path_to_write_to  number_of_cpus
 
 import numpy as np
+import subprocess as p
 
 def main():
     try:
@@ -28,25 +29,30 @@ def main():
     cpus = int(args[3])
 
 
-	# EDIT THE RANGE OF K HERE #
-    for k in range(1,35):
-        for i in range(1,3):
+    # EDIT THE RANGE OF K HERE #
+    for i in range(1,50):
+        for k in range(1,45):
             print "K: " + str(k) + "   " + str(i)
-            outname = outputpath + "varyK_output_" + str(k) + "_" + str(i) + ".txt"
-            configname = outputpath + "varyK_config_"+ str(k) + "_" + str(i) + ".txt"
+            outname = outputpath + "varyK_output_" + str(i) + "_" + str(k) + ".txt"
+            configname = outputpath + "varyK_config_"+ str(i) + "_" + str(k) + ".txt"
             printConfig(configname, k, cpus, 0)
             theCmd = "ipython " + path_to_miergolf + "src/main.py "+configname+ " " + graphname + " > " + outname
-            os.system(theCmd)
+            print(theCmd)
+            p.call(theCmd, shell=True)
 
 
 def printConfig(filename, k, cpus, nodes):
     fout = open(filename,'w')
+    if k < 24:
+        numAnts = 24
+    else:
+        numAnts = k
     steps = nodes * 2000
-    fout.write("number of restarts   : 16\n")
-    fout.write("number of ants       : 64\n")
+    fout.write("number of restarts   : 4\n")
+    fout.write("number of ants       : " + str(numAnts) + "\n")
     fout.write("converge threshold   : 0.0001\n")
-    fout.write("local optimization   : 32\n")
-    fout.write("evaporation rate     : 0.2\n")
+    fout.write("local optimization   : 8\n")
+    fout.write("evaporation rate     : 0.25\n")
     fout.write("dampening            : 0.9999\n")
     fout.write("alpha                : 1.0\n")
     fout.write("beta                 : 1.0\n")
