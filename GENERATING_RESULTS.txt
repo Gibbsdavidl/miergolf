@@ -40,7 +40,7 @@ Permutation Test
 
 In each result line, column 5 to the end are SLTE values from permuted data.
 
-Edges were accepted if sum(res0[5:ncol(res0)]) / (ncol(res0)+1) < 1 / ncol(res0)
+Edges were accepted if sum( res0[5:ncol(res0)] > res0[4] ) < (1 / length(c(5:ncol(res0))+1)) 
 
 ------------------------------------------
 Solving the Influence Maximization Problem
