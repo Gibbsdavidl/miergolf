@@ -154,6 +154,12 @@ def autoshuff((y,x,yl,n)):
     return(sumLagTE(permutedY,x,yl,n,"perm"))
 
 
+def teShuff((y,x,yl,n)):
+    permutedY = deepcopy(y)
+    shuffle(permutedY)
+    return(autoTE(permutedY,x,yl,n))
+
+
 def mad(arr):
     """ Median Absolute Deviation: a "Robust" version of standard deviation.
     Indices variabililty of the sample.
@@ -168,30 +174,151 @@ def autoPerm(y,x,yl,n,p,cpus):
     # autoTE is
     # FOR TE (Y -> X)
     # The NULL is that the observed TE is the same as permuted TEs
-    pool = mp.Pool(cpus)
+    #pool = mp.Pool(cpus)
     observedTE = sumLagTE(y,x,yl,n,"obs")
-    permutedList = it.repeat( (y,x,yl,n), p)
-    permutedTE = pool.map(autoshuff, permutedList)
-    robustDist = (observedTE - np.median(permutedTE)) / mad(permutedTE)
-    pool.close()
+    #permutedList = it.repeat( (y,x,yl,n), p)
+    #permutedTE = pool.map(autoshuff, permutedList)
+    #robustDist = (observedTE - np.median(permutedTE)) / mad(permutedTE)
+    #pool.close()
     #return([robustDist, observedTE] + permutedTE)
-    return([observedTE, robustDist])
+    #return([observedTE, robustDist])
+    return([observedTE])
 
+
+def tePerm(y,x,yl,n,p,cpus):
+    # autoTE is NO SUMMATIONS
+    # FOR TE (Y -> X)
+    # The NULL is that the observed TE is the same as permuted TEs
+    #pool = mp.Pool(cpus)
+    observedTE = autoTE(y,x,yl,n)
+    #permutedList = it.repeat( (y,x,yl,n), p)
+    #permutedTE = pool.map(teShuff, permutedList)
+    #robustDist = (observedTE - np.median(permutedTE)) / mad(permutedTE)
+    #pool.close()
+    #return([observedTE, robustDist])
+    return([observedTE])
+
+
+def randomWalk(n):
+    # do a random walk
+    x = [0]
+    for i in range(n):
+        u = np.random.normal()
+        if u > 0:
+            xt = x[i]+1
+        else:
+            xt = x[i]-1
+        x.append(xt+np.random.normal(loc=0,scale=0.25))
+    return(x)
+
+
+def autoReg(n):
+    # auto regression
+    x = [np.random.normal()]
+    for i in range(n):
+        x.append(0.5*x[i] + np.random.normal())
+    return(x)
+
+
+def model_1_step_back(y):
+    # auto regression with coupling
+    # sample c -- coupling coefficient
+    x = [0 for i in range(0,len(y))]
+    for i in range(1,len(y)):
+        x[i] = 0.6*x[i-1] + 0.4*y[i-1] + np.random.normal(loc=0, scale=0.25)
+    return(x)
+
+
+def model_3_steps_back(y):
+    # auto regression with coupling
+    # sample c -- coupling coefficient
+    x = [0 for i in range(0,len(y))]
+    for i in range(5,len(y)):
+        x[i] = 0.6*x[i-1] + 0.4*y[i-3] + np.random.normal(loc=0, scale=0.25)
+    return(x)
+
+
+def model_1_and_3_steps_back(y):
+    # auto regression with coupling
+    # sample c -- coupling coefficient
+    x = [0 for i in range(0,len(y))]
+    for i in range(5,len(y)):
+        x[i] = 0.4*x[i-1] + 0.4*y[i-1] + 0.2*y[i-3] + np.random.normal(loc=0, scale=0.25)
+    return(x)
 
 
 def main(argv):
-    print("Random Case, x and y unrelated.")
-    y = normal(mu=10, sigma=1, size=1000)
-    x = normal(mu=10, sigma=1, size=1000)
-    yl = 5
+    print("type\tforward\treverse")
     n  = 10
-    p  = 100
-    res0 = autoPerm(y,x,yl,n,p,2)
-    print(res0)
-    res1 = autoPerm(x,y,yl,n,p,2)
-    print(res1)
+    p  = 30
 
-    # print for both directions
+    runs = 1000
+
+    # The random unrelated case #
+    yl = 5
+    for i in xrange(runs):
+        y = np.random.normal(loc=10, scale=1, size=100)
+        x = np.random.normal(loc=10, scale=1, size=100)
+        res0 = autoPerm(y,x,yl,n,p,6)
+        res1 = autoPerm(x,y,yl,n,p,6)
+        print("\t".join(["Normal_Random", str(res0[0]), str(res1[0])]))
+
+    # random walk where info comes from 1 and 3 steps back
+    yl = 5
+    for i in xrange(runs):
+        y = randomWalk(100)
+        x = model_1_and_3_steps_back(y)
+        res0 = autoPerm(y,x,yl,n,p,6)
+        res1 = autoPerm(x,y,yl,n,p,6)
+        print("\t".join(["RW_Model1_3", str(res0[0]), str(res1[0])]))
+
+    # random walk where info comes from 1 step back
+    yl = 5
+    for i in xrange(runs):
+        y = randomWalk(100)
+        x = model_1_step_back(y)
+        res0 = autoPerm(y,x,yl,n,p,6)
+        res1 = autoPerm(x,y,yl,n,p,6)
+        print("\t".join(["RW_Model1", str(res0[0]), str(res1[0])]))
+
+    # random walk where info comes from 3 step back
+    yl = 5
+    for i in xrange(runs):
+        y = randomWalk(100)
+        x = model_3_steps_back(y)
+        res0 = autoPerm(y,x,yl,n,p,6)
+        res1 = autoPerm(x,y,yl,n,p,6)
+        print("\t".join(["RW_Model3", str(res0[0]), str(res1[0])]))
+
+    # random walk where info comes from 3 and 1 step back
+    # but we DONT use the sum-lag.  just use three step back... 
+    yl = 1
+    for i in xrange(runs):
+        y = randomWalk(100)
+        x = model_1_and_3_steps_back(y)
+        res0 = tePerm(y,x,yl,n,p,6)
+        res1 = tePerm(x,y,yl,n,p,6)
+        print("\t".join(["RW_Model_1_3_y1", str(res0[0]), str(res1[0])]))
+
+    # random walk where info comes from 3 and 1 step back
+    # but we DONT use the sum-lag.  just use three step back... 
+    yl = 3
+    for i in xrange(runs):
+        y = randomWalk(100)
+        x = model_1_and_3_steps_back(y)
+        res0 = tePerm(y,x,yl,n,p,6)
+        res1 = tePerm(x,y,yl,n,p,6)
+        print("\t".join(["RW_Model_1_3_y3", str(res0[0]), str(res1[0])]))
+
+    # random walk where info comes from 3 step back
+    # but we DONT use the sum-lag.  just use one step back... 
+    yl = 1
+    for i in xrange(runs):
+        y = randomWalk(100)
+        x = model_3_steps_back(y)
+        res0 = tePerm(y,x,yl,n,p,6)
+        res1 = tePerm(x,y,yl,n,p,6)
+        print("\t".join(["RW_Model3_y1", str(res0[0]), str(res1[0])]))
 
 
 if __name__ == "__main__":
