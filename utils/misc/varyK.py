@@ -30,7 +30,7 @@ def main():
 
 
     # EDIT THE RANGE OF K HERE #
-    for i in range(1,50):
+    for i in range(1,2):
         for k in range(1,45):
             print "K: " + str(k) + "   " + str(i)
             outname = outputpath + "varyK_output_" + str(i) + "_" + str(k) + ".txt"
@@ -48,18 +48,18 @@ def printConfig(filename, k, cpus, nodes):
     else:
         numAnts = k
     steps = nodes * 2000
-    fout.write("number of restarts   : 4\n")
-    fout.write("number of ants       : " + str(numAnts) + "\n")
+    fout.write("number of restarts   : 8\n")
+    fout.write("number of ants       : 32\n")
     fout.write("converge threshold   : 0.0001\n")
-    fout.write("local optimization   : 8\n")
+    fout.write("local optimization   : 16\n")
     fout.write("evaporation rate     : 0.25\n")
     fout.write("dampening            : 0.9999\n")
     fout.write("alpha                : 1.0\n")
     fout.write("beta                 : 1.0\n")
     fout.write("mode                 : tx\n")
     fout.write("optimize on          : score\n")
-    fout.write("transmit threshold   : 0.0001\n")
-    fout.write("receive threshold    : 0.0001\n")
+    fout.write("transmit threshold   : 0.0002\n")
+    fout.write("receive threshold    : 0.0002\n")
     fout.write("k                    : "+ str(k) + "\n")
     fout.write("cpus                 : "+str(cpus)+"\n")
     fout.write("lineGraph            : regular\n")
