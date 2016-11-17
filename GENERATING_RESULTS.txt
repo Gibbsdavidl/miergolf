@@ -49,7 +49,11 @@ Solving the Influence Maximization Problem
 With the output of SLTE, as above, we should have a file formated "gene_A \t geneB \t SLTE \n".
 I have saved this weighted network file as "data/yeastmine_signif_te.net".
 
-Then, for a given value of K (the set size), we run:
+The parameter sets used in the paper are found at:
+utils/misc/slow_params_sweep_K.py
+utils/misc/fast_params_sweep_K.py
+
+If only a single value of K (the set size) is desired, we run:
 
 python src/main.py data/ant_config.txt data/yeastmine_signif_te.net
 
@@ -82,9 +86,13 @@ Nodes   The node names used in the optimized solution.
 Automating the runs
 -------------------
 
-If you want to automatically run on a range of K values, use the utils/varyK.py script.
+The parameter sets used in the paper are found at:
+utils/misc/slow_params_sweep_K.py
+utils/misc/fast_params_sweep_K.py
 
-arguments to this script are:
+But I encourage playing around with the parameters to see how results are affected.
+
+arguments to the sweek_K / varyK scripts are:
 path_to_miergolf = args[0]
 graphname = args[1]
 outputpath = args[2]
