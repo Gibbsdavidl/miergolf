@@ -44,17 +44,19 @@ def main():
             sys.exit(0)
     s = initProgramState(args)
     cpus = s["cpus"]
+    outf = s["outf"]
     pool = mp.Pool(cpus)
     (nodes, sparseMat) = buildGraph(s)
     s2 = optimize (pool, s, nodes, sparseMat)
     pool.close()
-    printResults(s2,nodes)
+    printResults(s2,nodes,outf)
 
 
-def printResults(state,nodes):
+def printResults(state,nodes,outfile):
+    fout = open(outfile,'w')
     wts = weightsum(nodes, state["bestEver"][2])
-    print ("Config\tGraph\tType\tOptimTo\tMode\tNodes\tAnts\tTx\tRx\tDamp\tLocal\tScore\tTouch\tSoln\tWt\tNodes")
-    print ( str(state["config"]) +"\t"+
+    #print ("Config\tGraph\tType\tOptimTo\tMode\tNodes\tAnts\tTx\tRx\tDamp\tLocal\tScore\tTouch\tSoln\tWt\tNodes")
+    fout.write ( str(state["config"]) +"\t"+
             str(state["graphfile"]) +"\t"+
             str(state["lineGraph"]) +"\t"+
             str(state["opton"]) +"\t"+
@@ -69,10 +71,9 @@ def printResults(state,nodes):
             str(state["bestEver"][1]) +"\t"+
             str(state["bestEver"][2]) +"\t"+
             str(wts) +"\t"+
-            ":".join([nodes[i][0]+"-"+nodes[i][1] for i in state["bestEver"][2]])
-    )
+            ":".join([nodes[i][0]+"-"+nodes[i][1] for i in state["bestEver"][2]] )+"\n"
+     )
 
-                        
 
 def printGraph(flag, sparseMat):
     if flag == 1:

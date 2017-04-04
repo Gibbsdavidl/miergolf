@@ -30,18 +30,18 @@ def main():
 
 
     # EDIT THE RANGE OF K HERE #
-    for i in range(1,2):
+    for i in range(2,3):
         for k in range(1,45):
-            print "K: " + str(k) + "   " + str(i)
+            #print "K: " + str(k) + "   " + str(i)
             outname = outputpath + "varyK_output_" + str(i) + "_" + str(k) + ".txt"
             configname = outputpath + "varyK_config_"+ str(i) + "_" + str(k) + ".txt"
-            printConfig(configname, k, cpus, 0)
-            theCmd = "python2.7 " + path_to_miergolf + "src/main.py "+configname+ " " + graphname + " > " + outname
+            printConfig(configname, k, cpus, 0, outname)
+            theCmd = "python2.7 " + path_to_miergolf + "src/main.py "+configname+ " " + graphname
             print(theCmd)
-            p.call(theCmd, shell=True)
+            #p.call(theCmd, shell=True)
 
 
-def printConfig(filename, k, cpus, nodes):
+def printConfig(filename, k, cpus, nodes, outname):
     fout = open(filename,'w')
     if k < 24:
         numAnts = 24
@@ -51,7 +51,7 @@ def printConfig(filename, k, cpus, nodes):
     fout.write("number of restarts   : 8\n")
     fout.write("number of ants       : 64\n")
     fout.write("converge threshold   : 0.0001\n")
-    fout.write("local optimization   : 16\n")
+    fout.write("local optimization   : 32\n")
     fout.write("evaporation rate     : 0.2\n")
     fout.write("dampening            : 0.9999\n")
     fout.write("alpha                : 1.0\n")
@@ -71,6 +71,7 @@ def printConfig(filename, k, cpus, nodes):
     fout.write("dissipate             : 0.01\n")
     fout.write("full run             : fullrun\n")
     fout.write("store size           : 20\n")
+    fout.write("output file          : "+outname+"\n")
     fout.close()
 
 

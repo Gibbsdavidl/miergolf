@@ -28,7 +28,8 @@ def initProgramState (args):
                     "permutes" : int(programArgs[15]), # for running the permutation mode
                     "ptoKratio" : 0.0,                 
                     "runsDone" : 0,
-                    "iters" : 0}
+                    "iters" : 0,
+                    "outf" : programArgs[23]} # write out the file
     return(programState)
 
 
