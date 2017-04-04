@@ -10,6 +10,7 @@ def weightsum(nodes,tup):
         totwt += nodes[ti][2]
     return(totwt)
 
+
 def scoreSoln(soln, s, smat, nodes):
     # soln -- the solutions set S
     # smat  -- nxn sparse matrix
@@ -128,23 +129,9 @@ def subMatrix(rows, cols, A):
 
 
 def scoreMax(solns, s):
-    best = 0  # index to the best
-    idx = 0   # current index
-    for (a,(b,c)) in solns:
-        if s["opton"] == "touch":
-            if best < c:
-                best = idx
-        elif s["opton"] == "score":
-            if best < b:
-                best = idx
-        elif s["opton"] == "combo":
-            print "opton: combo -- is not implemented. Please use opton:score or opton:touch"
-            sys.exit(1)
-            #if best < combo(b,c):
-            #    best = idx
-        else:
-            print "ScoreMax Error: opton must be score, touch, or combo"
-            sys.exit(1)
-        idx += 1 # NEXT!
-    return(solns[best])
-
+    sortedSolns = sorted(solns, key=lambda x: x[1][1], reverse=True)
+    if (sortedSolns[0][1][1] > sortedSolns[1][1][1]):
+        # if the top two scores are the same, then we need to consider the edge weights
+        solns = [ x for x in solns if x[1][1] == sortedSolns[0][1][1] ] # get out the solns that have the same top touch
+        sortedSolns = sorted(solns, key=lambda x: x[1][0], reverse=True) # sort by the score within that group.
+    return(sortedSolns[0])

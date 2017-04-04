@@ -72,7 +72,7 @@ def antWork(pool, s, ps, sparseMat, nodes):
                      it.repeat(sparseMat, nants), seeds, it.repeat(nodes, nants)))
     # send it to a pooled fun party
     solns = pool.map(poolParty, antdat)
-    # return teh bestest
+    # return the best
     return(scoreMax(solns, s))
 
 
@@ -100,6 +100,7 @@ def genSoln(i, s, ps):
 
 def localSearch(s, ps, bestSoln, sparseMat, nodes):
     (bestScore,bestTouch) = scoreSoln(bestSoln, s, sparseMat, nodes)
+    # soln now doesn't include the edge weights
     if s["local"] == -1:   # none
         # go back! go back!
         return (bestSoln,(bestScore,bestTouch))
